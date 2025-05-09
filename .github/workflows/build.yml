@@ -1,0 +1,58 @@
+name: Product Build Workflow
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: 'windows-latest'
+    name: "Build for Windows"
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [user, system]
+        arch: [x64, arm64]
+    env:
+      npm_config_arch: ${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: 'repository'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: .\repository
+        run: npm install
+
+      - name: Build Executables
+        working-directory: ./repository
+        run: npm run gulp vscode-win32-${{ matrix.arch }}-min
+
+      - name: Apply Inno Setup Updater
+        working-directory: ./repository
+        run: npm run gulp vscode-win32-${{ matrix.arch }}-inno-updater
+
+      - name: Create Installer
+        working-directory: ./repository
+        run: npm run gulp vscode-win32-${{ matrix.arch }}-${{ matrix.target }}-setup
+
+      - name: Upload DevForge Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}-${{ matrix.target }}-DevForge
+          path: ${{ github.workspace }}/repository/.build/win32-${{ matrix.arch }}/${{ matrix.target }}-setup/DevForge.exe

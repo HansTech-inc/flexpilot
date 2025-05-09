@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Management - Flexpilot</title>
+    <!-- Poppins font import -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+        }
+        .model-card {
+            @apply bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300;
+        }
+        .btn-primary {
+            @apply bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 px-6 rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500 text-gray-800 dark:text-white font-semibold py-2.5 px-6 rounded-xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900;
+        }
+        .input-field {
+            @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-medium;
+            font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+        }
+        h1, h2, h3, h4, h5, h6, label, button, input, select, textarea, p, span, li, ul, ol, div {
+            font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+        }
+        .btn-primary, .btn-secondary {
+            letter-spacing: 0.01em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">AI Settings</h1>
+            <button id="addModelBtn" class="btn-primary flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+               New
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-8">
+            <nav class="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
+                <button class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600" data-tab="models">
+                    Models
+                </button>
+                <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700" data-tab="preferences">
+                    Preferences
+                </button>
+                <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700" data-tab="completions">
+                     Config
+                </button>
+            </nav>
+        </div>
+
+        <!-- Models Tab Content -->
+        <div id="modelsTab" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Model Cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Usage Preferences Tab Content (hidden by default) -->
+        <div id="preferencesTab" class="hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Preferences</h2>
+                <div class="space-y-4">
+                    <!-- Preference items will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Completions Config Tab Content (hidden by default) -->
+        <div id="completionsTab" class="hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Configuration</h2>
+                <form id="completionsForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">API Base URL</label>
+                        <input type="text" name="baseUrl" class="input-field" placeholder="https://api.openai.com/v1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">API Key</label>
+                        <input type="password" name="apiKey" class="input-field" placeholder="sk-...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Model ID</label>
+                        <input type="text" name="modelId" class="input-field" placeholder="gpt-3.5-turbo">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Max Input Tokens</label>
+                            <input type="number" name="maxInputTokens" class="input-field" placeholder="4000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Max Output Tokens</label>
+                            <input type="number" name="maxOutputTokens" class="input-field" placeholder="500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Temperature</label>
+                            <input type="number" name="temperature" class="input-field" step="0.1" placeholder="0.2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Debouncer Wait (ms)</label>
+                            <input type="number" name="debouncerWait" class="input-field" placeholder="200">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Model Dialog -->
+    <div id="modelDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold mb-4">Configure Model</h2>
+                <form id="modelForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Provider</label>
+                        <select name="provider" class="input-field">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="mistral">Mistral AI</option>
+                            <option value="groq">GroqCloud</option>
+                            <option value="cohere">Cohere</option>
+                            <option value="google">Google AI</option>
+                            <option value="azure">Azure OpenAI</option>
+                            <option value="bedrock">Amazon Bedrock</option>
+                            <option value="generic">Generic Provider</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nickname</label>
+                        <input type="text" name="nickname" class="input-field" placeholder="My Model">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">API Base URL</label>
+                        <input type="text" name="baseUrl" class="input-field" placeholder="https://api.openai.com/v1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">API Key</label>
+                        <input type="password" name="apiKey" class="input-field" placeholder="sk-...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Model ID</label>
+                        <input type="text" name="modelId" class="input-field" placeholder="gpt-4">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Temperature</label>
+                        <input type="number" name="temperature" class="input-field" step="0.1" placeholder="0.2">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="supportsToolCalls" class="mr-2">
+                        <label>Supports tool calling</label>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" class="btn-secondary" onclick="closeModelDialog()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Model</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <template id="modelCardTemplate">
+        <div class="model-card p-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-semibold"></h3>
+                    <p class="text-gray-500 dark:text-gray-400"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="edit-btn p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                    </button>
+                    <button class="delete-btn p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Model ID:</span>
+                    <span class="text-sm font-medium"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Temperature:</span>
+                    <span class="text-sm font-medium"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Tool Calls:</span>
+                    <span class="text-sm font-medium"></span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        (function() {
+            const vscode = acquireVsCodeApi();
+            let models = [];
+            let preferences = {};
+            let completionsConfig = {};
+
+            // Initialize the webview
+            document.addEventListener('DOMContentLoaded', () => {
+                // Request initial data
+                vscode.postMessage({ type: 'getModels' });
+                vscode.postMessage({ type: 'getPreferences' });
+                vscode.postMessage({ type: 'getCompletionsConfig' });
+
+                // Set up event listeners
+                setupTabSwitching();
+                setupModelDialog();
+                setupForms();
+            });
+
+            // Handle messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+                switch (message.type) {
+                    case 'models':
+                        models = message.data;
+                        renderModels();
+                        break;
+                    case 'preferences':
+                        preferences = message.data;
+                        renderPreferences();
+                        break;
+                    case 'completionsConfig':
+                        completionsConfig = message.data;
+                        renderCompletionsConfig();
+                        break;
+                }
+            });
+
+            // Tab switching
+            function setupTabSwitching() {
+                const tabs = document.querySelectorAll('[data-tab]');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        // Update tab styles
+                        tabs.forEach(t => {
+                            t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                            t.classList.add('text-gray-500');
+                        });
+                        tab.classList.remove('text-gray-500');
+                        tab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+
+                        // Show/hide content
+                        const tabId = tab.dataset.tab;
+                        document.querySelectorAll('[id$="Tab"]').forEach(content => {
+                            content.classList.add('hidden');
+                        });
+                        document.getElementById(tabId + 'Tab').classList.remove('hidden');
+                    });
+                });
+            }
+
+            // Model dialog
+            function setupModelDialog() {
+                const addModelBtn = document.getElementById('addModelBtn');
+                const modelDialog = document.getElementById('modelDialog');
+                const modelForm = document.getElementById('modelForm');
+
+                addModelBtn.addEventListener('click', () => {
+                    modelDialog.classList.remove('hidden');
+                    modelForm.reset();
+                });
+
+                window.closeModelDialog = () => {
+                    modelDialog.classList.add('hidden');
+                };
+
+                modelForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(modelForm);
+                    const modelData = {
+                        provider: formData.get('provider'),
+                        nickname: formData.get('nickname'),
+                        baseUrl: formData.get('baseUrl'),
+                        apiKey: formData.get('apiKey'),
+                        modelId: formData.get('modelId'),
+                        temperature: parseFloat(formData.get('temperature')),
+                        supportsToolCalls: formData.get('supportsToolCalls') === 'on'
+                    };
+
+                    vscode.postMessage({
+                        type: 'saveModel',
+                        data: modelData
+                    });
+
+                    closeModelDialog();
+                });
+
+                // Provider-specific form fields
+                const providerSelect = modelForm.querySelector('[name="provider"]');
+                providerSelect.addEventListener('change', () => {
+                    const provider = providerSelect.value;
+                    updateProviderFields(provider);
+                });
+            }
+
+            // Update form fields based on provider
+            function updateProviderFields(provider) {
+                const baseUrlInput = document.querySelector('[name="baseUrl"]');
+                const modelIdInput = document.querySelector('[name="modelId"]');
+
+                switch (provider) {
+                    case 'openai':
+                        baseUrlInput.value = 'https://api.openai.com/v1';
+                        modelIdInput.placeholder = 'gpt-4';
+                        break;
+                    case 'anthropic':
+                        baseUrlInput.value = 'https://api.anthropic.com/v1';
+                        modelIdInput.placeholder = 'claude-3-sonnet-20240229-v1:0';
+                        break;
+                    case 'mistral':
+                        baseUrlInput.value = 'https://api.mistral.ai/v1';
+                        modelIdInput.placeholder = 'mistral-large-latest';
+                        break;
+                    case 'groq':
+                        baseUrlInput.value = 'https://api.groq.com/openai/v1';
+                        modelIdInput.placeholder = 'llama-3.3-70b-versatile';
+                        break;
+                    // Add more providers as needed
+                }
+            }
+
+            // Setup forms
+            function setupForms() {
+                const completionsForm = document.getElementById('completionsForm');
+                completionsForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(completionsForm);
+                    const config = {
+                        baseUrl: formData.get('baseUrl'),
+                        apiKey: formData.get('apiKey'),
+                        modelId: formData.get('modelId'),
+                        maxInputTokens: parseInt(formData.get('maxInputTokens')),
+                        maxOutputTokens: parseInt(formData.get('maxOutputTokens')),
+                        temperature: parseFloat(formData.get('temperature')),
+                        debouncerWait: parseInt(formData.get('debouncerWait'))
+                    };
+
+                    vscode.postMessage({
+                        type: 'saveCompletionsConfig',
+                        data: config
+                    });
+                });
+            }
+
+            // Render functions
+            function renderModels() {
+                const container = document.getElementById('modelsTab');
+                container.innerHTML = '';
+                const template = document.getElementById('modelCardTemplate');
+
+                models.forEach(model => {
+                    const card = template.content.cloneNode(true);
+
+                    // Set model data
+                    card.querySelector('h3').textContent = model.nickname;
+                    card.querySelector('p').textContent = model.provider;
+                    card.querySelectorAll('.font-medium')[0].textContent = model.modelId;
+                    card.querySelectorAll('.font-medium')[1].textContent = model.temperature;
+                    card.querySelectorAll('.font-medium')[2].textContent = model.supportsToolCalls ? 'Yes' : 'No';
+
+                    // Add event listeners
+                    card.querySelector('.edit-btn').addEventListener('click', () => editModel(model));
+                    card.querySelector('.delete-btn').addEventListener('click', () => deleteModel(model));
+
+                    container.appendChild(card);
+                });
+            }
+
+            function renderPreferences() {
+                const container = document.getElementById('preferencesTab').querySelector('.space-y-4');
+                container.innerHTML = '';
+
+                Object.entries(preferences).forEach(([location, modelId]) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg';
+
+                    const label = document.createElement('span');
+                    label.textContent = location;
+                    div.appendChild(label);
+
+                    const select = document.createElement('select');
+                    select.className = 'input-field w-64';
+                    select.innerHTML = `
+                        <option value="">Disabled</option>
+                        ${models.map(m => `
+                            <option value="${m.id}" ${m.id === modelId ? 'selected' : ''}>
+                                ${m.nickname}
+                            </option>
+                        `).join('')}
+                    `;
+
+                    select.addEventListener('change', () => {
+                        vscode.postMessage({
+                            type: 'savePreference',
+                            data: {
+                                location,
+                                modelId: select.value || null
+                            }
+                        });
+                    });
+
+                    div.appendChild(select);
+                    container.appendChild(div);
+                });
+            }
+
+            function renderCompletionsConfig() {
+                const form = document.getElementById('completionsForm');
+                Object.entries(completionsConfig).forEach(([key, value]) => {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        input.value = value;
+                    }
+                });
+            }
+
+            // Model operations
+            function editModel(model) {
+                const modelDialog = document.getElementById('modelDialog');
+                const modelForm = document.getElementById('modelForm');
+
+                // Fill form with model data
+                Object.entries(model).forEach(([key, value]) => {
+                    const input = modelForm.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        if (input.type === 'checkbox') {
+                            input.checked = value;
+                        } else {
+                            input.value = value;
+                        }
+                    }
+                });
+
+                modelDialog.classList.remove('hidden');
+            }
+
+            function deleteModel(model) {
+                if (confirm(`Are you sure you want to delete "${model.nickname}"?`)) {
+                    vscode.postMessage({
+                        type: 'deleteModel',
+                        data: model.id
+                    });
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
