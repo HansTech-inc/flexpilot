@@ -10,34 +10,19 @@ import {
 } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
+import { ChatMessage, ChatRole, Feedback, PanelMode } from '../types';
 
 /**
  * Generates the welcome message for the user in the chat panel.
  */
-export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
-	return jsxToMarkdown({
-		children: `
-			<div>
-				<div class="flex items-center gap-3 mb-2">
-					<span class="text-3xl">🚀</span>
-					<span class="font-bold text-xl text-primary">Welcome, @${username}!</span>
-				</div>
-				<p class="text-lg text-gray-700">
-					I'm <b>Flexpilot</b> — your next-gen AI pair programmer.<br/>
-					Ready to help you <b>code faster, smarter, and with confidence</b>.<br/>
-					<span class="text-primary">Ask me anything, or type <code>/</code> for commands.</span>
-				</p>
-				<ul class="mt-3 text-gray-600">
-					<li>✨ <b>Autonomous agent</b> for complex, multi-step tasks</li>
-					<li>🔍 <b>Understands your codebase</b> and context</li>
-					<li>🌐 <b>Web search</b> and <b>tool integration</b> built-in</li>
-					<li>🧠 <b>Proactive suggestions</b> and <b>auto-fixes</b></li>
-				</ul>
-				<p class="mt-3 text-primary font-semibold">
-					Let's build something amazing together!
-				</p>
-			</div>
-		`
+export const getWelcomeMessage = (modelName?: string): vscode.MarkdownString => {
+	const modelDisplayName = modelName || 'current model';
+	const content = `Welcome to Flexpilot! I'm your AI assistant, powered by ${modelDisplayName}. How can I help you today?`;
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '', // jsxToChatMessage will use children
+		customRender: true,
+		children: `<div>${content}</div>`
 	});
 };
 
@@ -68,7 +53,7 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			children: `
+			children: `<div>
 				<h2>Important Instructions</h2>
 				<ul>
 					<li>
@@ -89,21 +74,21 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 				<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
 				<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
 				<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>
-			`,
+			</div>`,
 			role: 'system'
 		})
 	);
 
 	messages.push(
 		jsxToChatMessage({
-			children: 'Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format',
+			children: '<div>Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format</div>',
 			role: 'user'
 		})
 	);
 
 	messages.push(
 		jsxToChatMessage({
-			children: `
+			children: `<div>
 				<h3>Chat Conversation</h3>
 				<ul>
 					${prompt ? `
@@ -117,7 +102,7 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 						</li>
 					` : ''}
 				</ul>
-			`,
+			</div>`,
 			role: 'user'
 		})
 	);
@@ -139,7 +124,7 @@ export const buildFollowupProviderRequest = (
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			children: `
+			children: `<div>
 				<h2>Important Instructions</h2>
 				<ul>
 					<li>
@@ -160,7 +145,7 @@ export const buildFollowupProviderRequest = (
 				<pre>&lt;follow-up-question&gt;What are the best practices for using Docker?&lt;/follow-up-question&gt;</pre>
 				<pre>&lt;follow-up-question&gt;How can I improve the performance of my React app?&lt;/follow-up-question&gt;</pre>
 				<pre>&lt;follow-up-question&gt;What are the common pitfalls of using Node.js?&lt;/follow-up-question&gt;</pre>
-			`,
+			</div>`,
 			role: 'system'
 		})
 	);
@@ -190,7 +175,7 @@ export const buildFollowupProviderRequest = (
 	// Add the user prompt from the context history
 	messages.push(
 		jsxToChatMessage({
-			children: 'Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.',
+			children: '<div>Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.</div>',
 			role: 'user'
 		})
 	);
@@ -211,7 +196,7 @@ export const buildRequest = async (
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			children: `
+			children: `<div>
 				<h1>Important Points</h1>
 				<ul>
 					<li>
@@ -232,7 +217,7 @@ export const buildRequest = async (
 						The active file or document is the source code the user is looking at right now.
 					</li>
 				</ul>
-			`,
+			</div>`,
 			role: 'system'
 		})
 	);
@@ -269,18 +254,18 @@ export const buildRequest = async (
 			const citations = webResults.map((r, i) => `[${i+1}] ${r.title} (${r.url})`).join('\n');
 			messages.push(
 				jsxToChatMessage({
-					children: `
+					children: `<div>
 						<h3>Web Search Context</h3>
 						<p>${summary}</p>
 						<p><strong>Citations:</strong><br/>${citations}</p>
-					`,
+					</div>`,
 					role: 'system'
 				})
 			);
 		} catch (err) {
 			messages.push(
 				jsxToChatMessage({
-					children: `Web search failed: ${String(err)}`,
+					children: `<div>Web search failed: ${String(err)}</div>`,
 					role: 'system'
 				})
 			);
@@ -331,14 +316,97 @@ export const panelChatPrompts = {
 	/**
 	 * Generates the help text prefix.
 	 */
-	getHelpTextPrefix(): vscode.MarkdownString {
+	getHelpTextPrefix(mode: PanelMode, modelName?: string): vscode.MarkdownString {
+		const modelDisplayName = modelName || 'current model';
+		let content;
+		if (mode === PanelMode.EXPLAIN) {
+			content = `### Explain Code
+The current file and your selection will be sent to the ${modelDisplayName} for an explanation.`;
+		} else if (mode === PanelMode.OPTIMIZE) {
+			content = `### Optimize Code
+The current file and your selection (if any) will be sent to the ${modelDisplayName} to be optimized. The model will respond with suggestions.`;
+		} else if (mode === PanelMode.DOCS) {
+			content = `### Generate Docs
+The current file and your selection (if any) will be sent to the ${modelDisplayName} to generate documentation.`;
+		} else { // default to CHAT
+			content = `### Chat with ${modelDisplayName}
+Ask any question or enter a command. Use \`/\` to see a list of commands.`;
+		}
 		return jsxToMarkdown({
-			children: `
-				<div>
-					📚 Explore the Flexpilot IDE official documentation <a href='https://flexpilot.ai'>here</a> for all the details.
-				</div>
-			`
+			props: {},
+			type: 'div',
+			children: `<div>${content}</div>`
 		});
 	},
+};
+
+export const getProcessingMessage = () => {
+	const content = 'Processing your request...';
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '',
+		customRender: true,
+		children: `<div>${content}</div>`,
+		renderMarkdown: false // Explicitly false as it's a status message
+	});
+};
+
+export const getErrorMessage = (errorMessage: string) => {
+	const content = `Sorry, I encountered an error: ${errorMessage}`;
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '',
+		customRender: true,
+		children: `<div>${content}</div>`,
+		renderMarkdown: false // Error messages are typically plain
+	});
+};
+
+export const getInitialMessageForExistingChat = (modelName?: string, history?: ChatMessage[]) => {
+	if (history && history.length > 0) {
+		// If there's history, the last message usually serves as a good "initial" state.
+		// Or, we could return a specific message indicating the chat is being continued.
+		// For now, let's just return null and let the existing history render.
+		return null;
+	}
+	const modelDisplayName = modelName || 'current model';
+	const content = `Continuing your session with ${modelDisplayName}. What's next?`;
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '',
+		customRender: true,
+		children: `<div>${content}</div>`,
+	});
+};
+
+export const getFeedbackMessage = (feedback: Feedback) => {
+	let content = '';
+	if (feedback === Feedback.POSITIVE) {
+		content = 'Thanks for your feedback! I\'m glad I could help.';
+	} else if (feedback === Feedback.NEGATIVE) {
+		content = 'Thanks for your feedback! I\'ll try to do better next time.';
+	} else {
+		// No specific message for 'NONE' or other cases.
+		return null;
+	}
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '',
+		customRender: true,
+		children: `<div>${content}</div>`,
+		renderMarkdown: false,
+	});
+};
+
+export const getThinkingMessage = (): ChatMessage => {
+	const content = '_Flexpilot is thinking..._';
+	return jsxToChatMessage({
+		role: ChatRole.ASSISTANT,
+		content: '', // Content is from children
+		customRender: true, // Uses a custom rendering logic, not direct markdown
+		children: `<div>${content}</div>`,
+		isLoading: true, // Special flag for UI to show loading indicator perhaps
+		renderMarkdown: true // Allow markdown for italics
+	});
 };
 

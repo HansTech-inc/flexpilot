@@ -9,9 +9,11 @@ import { ThemeIcon } from 'vscode';
 import fetch from 'node-fetch';
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import type { Element } from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
+import { Tool } from '../types';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
 
 /**
@@ -494,14 +496,14 @@ export class AgentTools implements vscode.Disposable {
                     // Extract just the body text
                     content = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 3000);
                     // Extract code blocks
-                    $('pre, code').each((_: number, el: cheerio.Node) => {
+                    $('pre, code').each((_: number, el: cheerio.Element) => {
                         const code = $(el).text();
                         if (code && code.length > 10 && codeBlocks.length < 5) {
                             codeBlocks.push(code.slice(0, 500));
                         }
                     });
                     // Extract images
-                    $('img').each((_: number, el: cheerio.Node) => {
+                    $('img').each((_: number, el: cheerio.Element) => {
                         const src = $(el).attr('src');
                         if (src && images.length < 3) {
                             let absUrl = src;
@@ -826,5 +828,171 @@ export class AgentTools implements vscode.Disposable {
     dispose(): void {
         this._disposables.forEach(d => d.dispose());
         logger.info('Agent tools disposed');
+    }
+
+    private _processHtml(
+        htmlContent: string,
+        baseUrl: string,
+        query?: string
+    ): { title: string, textContent: string, links: { text: string, href: string }[] } {
+        const $ = cheerio.load(htmlContent);
+        const title = $('title').first().text() || $('h1').first().text() || $('h2').first().text();
+
+        // Remove script and style tags
+        $('script, style, noscript, iframe, svg, path, symbol, meta, link').remove();
+
+        // If a query is provided, try to find the most relevant part of the page
+        let targetNodes: cheerio.Cheerio<cheerio.Element>;
+        if (query) {
+            // Search for the query in text nodes, and select the parent element
+            const elementsContainingQuery = $('*:contains(\''\'\' + query + \'\'\')')
+                .not('body, html') // Exclude body and html to get more specific elements
+                .last(); // Often the most specific container
+
+            if (elementsContainingQuery.length > 0) {
+                targetNodes = elementsContainingQuery;
+            } else {
+                // Fallback to body if query is not found or no specific element is identified
+                targetNodes = $('body').length ? $('body') : ($('html') as cheerio.Cheerio<cheerio.Element>);
+            }
+        } else {
+            targetNodes = $('body').length ? $('body') : ($('html') as cheerio.Cheerio<cheerio.Element>);
+        }
+
+
+        // Process nodes to make URLs absolute and extract text
+        const absoluteUrlNodes = this._makeLinksAbsolute(targetNodes, baseUrl);
+        let textContent = this._extractTextFromNodes(absoluteUrlNodes, baseUrl, { preserveNewlines: false });
+
+        // Fallback if textContent is empty and it's not the full body
+        if (!textContent && targetNodes.length > 0 && !targetNodes.is('body, html')) {
+            const bodyNodes = this._makeLinksAbsolute($('body').length ? $('body') : ($('html') as cheerio.Cheerio<cheerio.Element>), baseUrl);
+            textContent = this._extractTextFromNodes(bodyNodes, baseUrl, { preserveNewlines: false });
+        }
+
+
+        // Extract links
+        const links: { text: string, href: string }[] = [];
+        absoluteUrlNodes.find('a').each((_, linkElement) => {
+            const href = $(linkElement).attr('href');
+            const text = $(linkElement).text().trim();
+            if (href && text) {
+                // Ensure URL is absolute
+                try {
+                    const absoluteHref = new URL(href, baseUrl).toString();
+                    links.push({ text, href: absoluteHref });
+                } catch (e) {
+                    // Invalid URL, skip
+                    console.warn(`Skipping invalid URL: ${href}`);
+                }
+            }
+        });
+        return { title, textContent, links };
+    }
+
+    private _extractTextFromNodes(
+        nodes: cheerio.Cheerio<cheerio.Element>,
+        baseUrl: string, // Added baseUrl for link processing if any
+        options: { length?: number; preserveNewlines?: boolean } = {}
+    ): string => {
+        const { length = 8000, preserveNewlines = false } = options;
+        let text = '';
+
+        nodes.each((_, node) => {
+            const element = node as cheerio.Element;
+            if (element.type === 'text') {
+                text += element.data;
+            } else if (element.type === 'tag') {
+                if (element.name === 'a') {
+                    const href = element.attribs?.href;
+                    const linkText = $(element).text();
+                    if (href && linkText) {
+                        try {
+                            const absoluteHref = new URL(href, baseUrl).toString(); // Ensure URL is absolute
+                            text += `[${linkText}](${absoluteHref})`;
+                        } catch (e) {
+                            text += `[${linkText}](${href})`; // Keep original if invalid
+                        }
+                    } else {
+                        text += $(element).text();
+                    }
+                } else if (element.name === 'img') {
+                    const alt = element.attribs?.alt;
+                    const src = element.attribs?.src;
+                    if (alt && src) {
+                        try {
+                            const absoluteSrc = new URL(src, baseUrl).toString(); // Ensure URL is absolute
+                            text += `[Image: ${alt}](${absoluteSrc})`;
+                        } catch (e) {
+                            text += `[Image: ${alt}](${src})`; // Keep original if invalid
+                        }
+                    } else if (alt) {
+                        text += `[Image: ${alt}]`;
+                    } else if (src) {
+                        try {
+                            const absoluteSrc = new URL(src, baseUrl).toString(); // Ensure URL is absolute
+                            text += `[Image](${absoluteSrc})`;
+                        } catch (e) {
+                            text += `[Image](${src})`; // Keep original if invalid
+                        }
+                    }
+                } else if (element.name === 'br' || element.name === 'p' || element.name === 'div' || /^h[1-6]$/.test(element.name)) {
+                    if (!preserveNewlines) {
+                        text += '\\n';
+                    } else {
+                        text += $(element).text(); // Let Cheerio handle text extraction for these block elements
+                    }
+                } else {
+                    text += $(element).text();
+                }
+
+                // Recursively process children if preserveNewlines is true,
+                // otherwise rely on $(element).text() which handles children.
+                if (preserveNewlines && element.childNodes && element.childNodes.length > 0) {
+                    // This part might be redundant if $(element).text() is already comprehensive
+                    // and could lead to duplicated text. Consider how Cheerio's .text() works.
+                    // For now, let's assume $(element).text() is sufficient when preserveNewlines is true.
+                }
+            }
+            if (text.length >= length) {
+                return false; // Stop iterating if length is reached
+            }
+        });
+
+        if (!preserveNewlines) {
+            text = text.replace(/\\n+/g, '\\n').trim();
+        } else {
+            text = text.trim();
+        }
+        return text.length > length ? text.substring(0, length) + '...' : text;
+    }
+
+    private _makeLinksAbsolute(nodes: cheerio.Cheerio<cheerio.Element>, baseUrl: string): cheerio.Cheerio<cheerio.Element> {
+        nodes.find('a').each((_, el) => {
+            const element = el as cheerio.Element;
+            const href = element.attribs?.href;
+            if (href) {
+                try {
+                    const absoluteUrl = new URL(href, baseUrl).href;
+                    element.attribs.href = absoluteUrl;
+                } catch (e) {
+                    // If URL is invalid, keep it as is or remove it
+                    // console.warn(\`Invalid URL encountered and skipped: \${href}\`);
+                }
+            }
+        });
+        nodes.find('img').each((_, el) => {
+            const element = el as cheerio.Element;
+            const src = element.attribs?.src;
+            if (src) {
+                try {
+                    const absoluteUrl = new URL(src, baseUrl).href;
+                    element.attribs.src = absoluteUrl;
+                } catch (e) {
+                    // console.warn(\`Invalid image src encountered and skipped: \${src}\`);
+                }
+            }
+        });
+        return nodes;
     }
 }
