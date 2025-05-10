@@ -10,7 +10,7 @@ import {
 } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
-import { ChatMessage, ChatRole, Feedback, PanelMode } from '../types';
+import { ChatMessage, ChatRole, PanelMode } from '../types';
 import * as React from 'react';
 import { ReactNode, CSSProperties } from 'react';
 
@@ -20,10 +20,9 @@ import { ReactNode, CSSProperties } from 'react';
 export const getWelcomeMessage = (modelName?: string): vscode.MarkdownString => {
 	const modelDisplayName = modelName || 'current model';
 	const content = `Welcome to Flexpilot! I'm your AI assistant, powered by ${modelDisplayName}. How can I help you today?`;
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '', // jsxToChatMessage will use children
-		customRender: true,
+	return jsxToMarkdown({
+		props: {},
+		type: 'div',
 		children: `<div>${content}</div>`
 	});
 };
@@ -381,25 +380,6 @@ export const getInitialMessageForExistingChat = (modelName?: string, history?: C
 	});
 };
 
-export const getFeedbackMessage = (feedback: Feedback) => {
-	let content = '';
-	if (feedback === Feedback.POSITIVE) {
-		content = 'Thanks for your feedback! I\'m glad I could help.';
-	} else if (feedback === Feedback.NEGATIVE) {
-		content = 'Thanks for your feedback! I\'ll try to do better next time.';
-	} else {
-		// No specific message for 'NONE' or other cases.
-		return null;
-	}
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '',
-		customRender: true,
-		children: `<div>${content}</div>`,
-		renderMarkdown: false,
-	});
-};
-
 export const getThinkingMessage = (): ChatMessage => {
 	const content = '_Flexpilot is thinking..._';
 	return jsxToChatMessage({
@@ -418,28 +398,17 @@ export interface PanelProps {
 	style?: CSSProperties;
 }
 
-export const Panel: React.FC<PanelProps> = ({ children, className, style }) => {
-	return (
-		<div className={className} style={style}>
-			{children}
-		</div>
-	);
+export const Panel: React.FC<PanelProps> = ({ children, className, style }: PanelProps) => {
+	return <div className={className} style={style}>{children}</div>;
 };
 
 export interface MessageProps {
 	message: ChatMessage;
-	feedback?: Feedback;
-	onFeedback?: (feedback: Feedback) => void;
 	children?: ReactNode;
 }
 
-export const Message: React.FC<MessageProps> = ({ children }) => {
-	// ... rest of the component implementation
-	return (
-		<div className="message">
-			{children}
-		</div>
-	);
+export const Message: React.FC<MessageProps> = ({ children }: MessageProps) => {
+	return <div>{children}</div>;
 };
 
 

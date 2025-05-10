@@ -229,7 +229,10 @@
     "yaserver": "^0.4.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "@emotion/types": "^0.7.0"
+    "@emotion/types": "^0.7.0",
+    "@types/puppeteer": "^8.0.3",
+    "@types/cheerio": "^0.22.31",
+    "@types/node": "^20.0.0"
   },
   "overrides": {
     "node-gyp-build": "4.8.1",

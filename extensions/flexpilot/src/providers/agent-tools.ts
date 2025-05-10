@@ -11,6 +11,7 @@ import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
+import type { Cheerio, AnyNode, CheerioAPI, CheerioElement } from 'cheerio';
 
 
 /**
@@ -832,7 +833,7 @@ export class AgentTools implements vscode.Disposable {
 		baseUrl: string,
 		query?: string
 	): { title: string, textContent: string, links: { text: string, href: string }[] } {
-		const $: CheerioAPI = cheerioLoad(htmlContent);
+		const $: CheerioAPI = cheerio.load(htmlContent);
 		const title = $('title').first().text() || $('h1').first().text() || $('h2').first().text();
 
 		// Remove script and style tags
@@ -868,7 +869,7 @@ export class AgentTools implements vscode.Disposable {
 
 		// Extract links
 		const links: { text: string, href: string }[] = [];
-		absoluteUrlNodes.find('a').each((_, linkElement) => {
+		absoluteUrlNodes.find('a').each((_: number, linkElement: CheerioElement) => {
 			const href = $(linkElement).attr('href');
 			const text = $(linkElement).text().trim();
 			if (href && text) {
@@ -892,10 +893,10 @@ export class AgentTools implements vscode.Disposable {
 		const { length = 8000, preserveNewlines = false } = options;
 		let text = '';
 
-		nodes.each((_, node) => {
+		nodes.each((_: number, node: AnyNode) => {
 			const element = node as CheerioElement;
 			if (element.type === 'text') {
-				text += element.data;
+				text += (element as any).data;
 			} else if (element.type === 'tag') {
 				if (element.name === 'a') {
 					const href = element.attribs?.href;
@@ -932,7 +933,7 @@ export class AgentTools implements vscode.Disposable {
 					}
 				} else if (element.name === 'br' || element.name === 'p' || element.name === 'div' || /^h[1-6]$/.test(element.name)) {
 					if (!preserveNewlines) {
-						text += '\\n';
+						text += '\n';
 					} else {
 						text += $(element).text();
 					}
@@ -946,7 +947,7 @@ export class AgentTools implements vscode.Disposable {
 		});
 
 		if (!preserveNewlines) {
-			text = text.replace(/\\n+/g, '\\n').trim();
+			text = text.replace(/\n+/g, '\n').trim();
 		} else {
 			text = text.trim();
 		}
@@ -954,7 +955,7 @@ export class AgentTools implements vscode.Disposable {
 	}
 
 	private _makeLinksAbsolute(nodes: Cheerio<AnyNode>, baseUrl: string, $: CheerioAPI): Cheerio<AnyNode> {
-		nodes.find('a').each((_, el) => {
+		nodes.find('a').each((_: number, el: CheerioElement) => {
 			const element = el as CheerioElement;
 			const href = element.attribs?.href;
 			if (href) {
@@ -966,7 +967,7 @@ export class AgentTools implements vscode.Disposable {
 				}
 			}
 		});
-		nodes.find('img').each((_, el) => {
+		nodes.find('img').each((_: number, el: CheerioElement) => {
 			const element = el as CheerioElement;
 			const src = element.attribs?.src;
 			if (src) {

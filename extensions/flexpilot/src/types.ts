@@ -3,7 +3,6 @@
  *  Licensed under the GPL-3.0 License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { LanguageModelV1 } from 'ai';
 import * as vscode from 'vscode';
 
 /**
@@ -23,7 +22,6 @@ export interface ICompletionsConfig {
  * Interface for chat model provider results.
  */
 export interface IChatModelProviderResult {
-	model: LanguageModelV1;
 	settings: {
 		temperature: number;
 	};
@@ -136,8 +134,7 @@ export interface IGitHubCopilotChatModel {
 export type IGitHubCopilotModel = IGitHubCopilotEmbeddingModel | IGitHubCopilotChatModel;
 
 export interface ChatMessage extends vscode.LanguageModelChatMessage {
-	role: ChatRole;
-	content: string;
+	// Remove content property to match base interface
 	value?: string;
 	appendText?: (text: string) => void;
 	appendMarkdown?: (markdown: string) => void;
@@ -149,11 +146,6 @@ export enum ChatRole {
 	User = 'user',
 	Assistant = 'assistant',
 	ASSISTANT = 'assistant'  // Alias for backward compatibility
-}
-
-export interface Feedback {
-	up: boolean;
-	down: boolean;
 }
 
 export enum PanelMode {
