@@ -494,14 +494,14 @@ export class AgentTools implements vscode.Disposable {
 					// Extract just the body text
 					content = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 3000);
 					// Extract code blocks
-					$('pre, code').each((_, el) => {
+					$('pre, code').each((_: number, el: CheerioElement) => {
 						const code = $(el).text();
 						if (code && code.length > 10 && codeBlocks.length < 5) {
 							codeBlocks.push(code.slice(0, 500));
 						}
 					});
 					// Extract images
-					$('img').each((_, el) => {
+					$('img').each((_: number, el: CheerioElement) => {
 						const src = $(el).attr('src');
 						if (src && images.length < 3) {
 							let absUrl = src;
