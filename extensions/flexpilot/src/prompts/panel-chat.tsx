@@ -3,10 +3,6 @@
  *  Licensed under the GPL-3.0 License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/** @jsx jsx */
-import { jsx } from '@emotion/react';
-import { css } from '@emotion/react';
-import * as React from 'react';
 import * as vscode from 'vscode';
 import {
 	jsxToChatMessage,
@@ -15,41 +11,6 @@ import {
 import { Message } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
-
-const styles = {
-	container: css`
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-	`,
-	header: css`
-		display: flex;
-		align-items: center;
-		gap: 12px;
-	`,
-	emoji: css`
-		font-size: 2.2em;
-	`,
-	title: css`
-		font-weight: 700;
-		font-size: 1.3em;
-		color: var(--vscode-textLink-foreground);
-	`,
-	description: css`
-		font-size: 1.1em;
-		color: var(--vscode-editor-foreground);
-	`,
-	list: css`
-		margin-top: 10px;
-		color: var(--vscode-descriptionForeground);
-		font-size: 1em;
-	`,
-	footer: css`
-		margin-top: 12px;
-		color: var(--vscode-textLink-foreground);
-		font-weight: 600;
-	`
-};
 
 /**
  * Generates the welcome message for the user in the chat panel.
@@ -107,8 +68,8 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage(
-			<Message role="system">
+		jsxToChatMessage({
+			children: `
 				<h2>Important Instructions</h2>
 				<ul>
 					<li>
@@ -129,36 +90,37 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 				<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
 				<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
 				<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>
-			</Message>
-		)
+			`,
+			role: 'system'
+		})
 	);
 
 	messages.push(
-		jsxToChatMessage(
-			<Message role="user">
-				Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format
-			</Message>
-		)
+		jsxToChatMessage({
+			children: 'Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format',
+			role: 'user'
+		})
 	);
 
 	messages.push(
-		jsxToChatMessage(
-			<Message role="user">
+		jsxToChatMessage({
+			children: `
 				<h3>Chat Conversation</h3>
 				<ul>
-					{prompt && (
+					${prompt ? `
 						<li>
-							<strong>User:</strong> {prompt}
+							<strong>User:</strong> ${prompt}
 						</li>
-					)}
-					{response && (
+					` : ''}
+					${response ? `
 						<li>
-							<strong>Assistant:</strong> {response}
+							<strong>Assistant:</strong> ${response}
 						</li>
-					)}
+					` : ''}
 				</ul>
-			</Message>
-		)
+			`,
+			role: 'user'
+		})
 	);
 
 	// Return the generated messages array for the chat model
@@ -177,28 +139,31 @@ export const buildFollowupProviderRequest = (
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage(<Message role="system">
-			<h2>Important Instructions</h2>
-			<ul>
-				<li>
-					You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting follow-up question</strong> for the current chat conversation.
-				</li>
-				<li>
-					You must provide a <strong>short, one-sentence question</strong> that the <strong>user can ask naturally</strong> that follows from the previous few questions and answers. The question must be <strong>under 10 words</strong> or fewer and in a <strong>single line.</strong>
-				</li>
-				<li>
-					<strong>Very Important: Strictly follow below response format in the output</strong>
-				</li>
-			</ul>
-			<h2>Response Format:</h2>
-			<pre>&lt;follow-up-question&gt;Short follow-up question&lt;/follow-up-question&gt;</pre>
+		jsxToChatMessage({
+			children: `
+				<h2>Important Instructions</h2>
+				<ul>
+					<li>
+						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting follow-up question</strong> for the current chat conversation.
+					</li>
+					<li>
+						You must provide a <strong>short, one-sentence question</strong> that the <strong>user can ask naturally</strong> that follows from the previous few questions and answers. The question must be <strong>under 10 words</strong> or fewer and in a <strong>single line.</strong>
+					</li>
+					<li>
+						<strong>Very Important: Strictly follow below response format in the output</strong>
+					</li>
+				</ul>
+				<h2>Response Format:</h2>
+				<pre>&lt;follow-up-question&gt;Short follow-up question&lt;/follow-up-question&gt;</pre>
 
-			<h2>Example Responses</h2>
-			<pre>&lt;follow-up-question&gt;How can I optimize this SQL query?&lt;/follow-up-question&gt;</pre>
-			<pre>&lt;follow-up-question&gt;What are the best practices for using Docker?&lt;/follow-up-question&gt;</pre>
-			<pre>&lt;follow-up-question&gt;How can I improve the performance of my React app?&lt;/follow-up-question&gt;</pre>
-			<pre>&lt;follow-up-question&gt;What are the common pitfalls of using Node.js?&lt;/follow-up-question&gt;</pre>
-		</Message>)
+				<h2>Example Responses</h2>
+				<pre>&lt;follow-up-question&gt;How can I optimize this SQL query?&lt;/follow-up-question&gt;</pre>
+				<pre>&lt;follow-up-question&gt;What are the best practices for using Docker?&lt;/follow-up-question&gt;</pre>
+				<pre>&lt;follow-up-question&gt;How can I improve the performance of my React app?&lt;/follow-up-question&gt;</pre>
+				<pre>&lt;follow-up-question&gt;What are the common pitfalls of using Node.js?&lt;/follow-up-question&gt;</pre>
+			`,
+			role: 'system'
+		})
 	);
 
 	// Add the user prompt from the context history to the messages array
@@ -225,9 +190,10 @@ export const buildFollowupProviderRequest = (
 
 	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage(<Message role="user">
-			Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.
-		</Message>)
+		jsxToChatMessage({
+			children: 'Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.',
+			role: 'user'
+		})
 	);
 
 	// Return the generated messages array for the chat model
@@ -245,28 +211,31 @@ export const buildRequest = async (
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage(<Message role="system">
-			<h1>Important Points</h1>
-			<ul>
-				<li>
-					You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer.
-				</li>
-				<li>Follow the user's requirements carefully & to the letter.</li>
-				<li>Keep your answers short and impersonal.</li>
-				<li>
-					You are powered by <b>${model}</b> Large Language Model
-				</li>
-				<li>Use Markdown formatting in your answers.</li>
-				<li>
-					Make sure to include the programming language name at the start of the Markdown code blocks
-				</li>
-				<li><code>python\nprint('hello world')</code></li>
-				<li>Avoid wrapping the whole response in triple backticks.</li>
-				<li>
-					The active file or document is the source code the user is looking at right now.
-				</li>
-			</ul>
-		</Message>)
+		jsxToChatMessage({
+			children: `
+				<h1>Important Points</h1>
+				<ul>
+					<li>
+						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer.
+					</li>
+					<li>Follow the user's requirements carefully & to the letter.</li>
+					<li>Keep your answers short and impersonal.</li>
+					<li>
+						You are powered by <b>${model}</b> Large Language Model
+					</li>
+					<li>Use Markdown formatting in your answers.</li>
+					<li>
+						Make sure to include the programming language name at the start of the Markdown code blocks
+					</li>
+					<li><code>python\nprint('hello world')</code></li>
+					<li>Avoid wrapping the whole response in triple backticks.</li>
+					<li>
+						The active file or document is the source code the user is looking at right now.
+					</li>
+				</ul>
+			`,
+			role: 'system'
+		})
 	);
 
 	// --- Web Search Context Injection ---
@@ -287,7 +256,7 @@ export const buildRequest = async (
 			// Compose a prompt for the LLM to synthesize a curated answer and cite sources
 			const llmPrompt = `You are a smart assistant. Given the following web search results for the query: "${webQuery}", synthesize a clear, direct, and relevant answer. Use the extracted content to answer, and cite or link to the most relevant sources.\n\n` +
 				webResults.map((r, i) => `Source [${i+1}]: ${r.title} (${r.url})\nContent: ${r.extractedContent}\n`).join('\n') +
-			`\n---\nPlease write a concise answer to the query, referencing the sources as [1], [2], etc., where appropriate. Include links where helpful.`;
+			`\n---\nPlease write a concise answer to the query, referencing the sources as [1], [2], etc., where appropriate. Include links where helpful.`
 			const llmResult = await vscode.commands.executeCommand<any>(
 				'vscode.lm.chat.complete',
 				[
@@ -300,17 +269,21 @@ export const buildRequest = async (
 			// Add the summary and citations as a system message
 			const citations = webResults.map((r, i) => `[${i+1}] ${r.title} (${r.url})`).join('\n');
 			messages.push(
-				jsxToChatMessage(<Message role="system">
-					<h3>Web Search Context</h3>
-					<p>{summary}</p>
-					<p><strong>Citations:</strong><br/>{citations}</p>
-				</Message>)
+				jsxToChatMessage({
+					children: `
+						<h3>Web Search Context</h3>
+						<p>${summary}</p>
+						<p><strong>Citations:</strong><br/>${citations}</p>
+					`,
+					role: 'system'
+				})
 			);
 		} catch (err) {
 			messages.push(
-				jsxToChatMessage(<Message role="system">
-					Web search failed: {String(err)}
-				</Message>)
+				jsxToChatMessage({
+					children: `Web search failed: ${String(err)}`,
+					role: 'system'
+				})
 			);
 		}
 	}
