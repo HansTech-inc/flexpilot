@@ -62,6 +62,9 @@ export interface IModelConfig {
 	modelId: string;
 	providerId: string;
 	supportsToolCalls: boolean;
+	baseUrl?: string;
+	apiKey?: string;
+	temperature?: number;
 }
 
 /**

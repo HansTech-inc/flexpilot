@@ -104,7 +104,7 @@ export const buildRequest = async (
   <li>Once the task is complete, <strong>summarize the changes you made</strong> for the user, including any new files, deleted files, or major refactors.</li>
   <li>You have access to the following tools:
     <ul>
-      ${Array.from(availableTools.entries()).map(([name, tool]) => `<li><strong>${tool.displayName}</strong>: ${tool.modelDescription}</li>`).join('\n')}
+      ${Array.from(availableTools.entries()).map(([, tool]) => `<li><strong>${tool.displayName}</strong>: ${tool.modelDescription}</li>`).join('\n')}
     </ul>
   </li>
   <li>

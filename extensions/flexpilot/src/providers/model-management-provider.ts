@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from 'path-browserify';
 import { modelConfigs, globalState, usagePreferences } from '../context';
 import { IModelConfig } from '../types';
 import { ModelProviders, modelProviderManager } from '.';
@@ -13,7 +12,6 @@ import { logger } from '../logger';
 
 export class ModelManagementProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'flexpilot.modelManagement';
-	private _view?: vscode.WebviewView;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -21,11 +19,9 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 
 	public resolveWebviewView(
 		webviewView: vscode.WebviewView,
-		context: vscode.WebviewViewResolveContext,
+		_context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
 	) {
-		this._view = webviewView;
-
 		webviewView.webview.options = {
 			enableScripts: true,
 			localResourceRoots: [
@@ -39,15 +35,7 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 	}
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
-		const htmlPath = path.join(this._extensionUri.fsPath, 'src', 'views', 'model-management.html');
-		let html = fs.readFileSync(htmlPath, 'utf-8');
-
-		// Make paths local to webview
-		html = html.replace(/src="([^"]*)"/g, (match, src) => {
-			return `src="${webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, src))}"`;
-		});
-
-		return html;
+		return `<!DOCTYPE html><html><head><title>Model Management</title></head><body><h1>Model Management</h1></body></html>`;
 	}
 
 	private async _setWebviewMessageListener(webview: vscode.Webview) {
@@ -117,7 +105,7 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 	}
 
 	private async _sendPreferences(webview: vscode.Webview) {
-		const preferences = {};
+		const preferences: Record<string, any> = {};
 		const locations = [
 			{ id: 'chat', label: 'Chat' },
 			{ id: 'inline', label: 'Inline Completions' },
@@ -125,7 +113,7 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 		];
 
 		for (const location of locations) {
-			preferences[location.label] = usagePreferences.get(`preference.${location.id}`);
+			preferences[location.id] = usagePreferences.get(`preference.${location.id}` as any);
 		}
 
 		webview.postMessage({ type: 'preferences', data: preferences });
@@ -153,7 +141,9 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 			temperature: data.temperature,
 			supportsToolCalls: data.supportsToolCalls,
 			family: 'chat',
-			version: '1.0.0'
+			version: '1.0.0',
+			maxInputTokens: 4096,
+			maxOutputTokens: 1024
 		};
 
 		modelConfigs.update(configId, config);
@@ -171,16 +161,9 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 	}
 
 	private async _savePreference(data: { location: string, modelId: string | null }) {
-		const locationMap = {
-			'Chat': 'chat',
-			'Inline Completions': 'inline',
-			'Notebook': 'notebook'
-		};
-
-		const locationId = locationMap[data.location];
-		if (!locationId) return;
-
-		await usagePreferences.update(`preference.${locationId}`, data.modelId);
+		const allowedLocations = ['chat', 'inline', 'notebook'];
+		if (!allowedLocations.includes(data.location)) return;
+		await usagePreferences.update(`preference.${data.location}` as any, data.modelId);
 		logger.notifyInfo(`Updated usage preference for ${data.location}`);
 	}
 

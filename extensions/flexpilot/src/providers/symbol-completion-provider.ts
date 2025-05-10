@@ -24,9 +24,7 @@ export class SymbolCompletionProvider implements vscode.CompletionItemProvider {
 	 */
 	async provideCompletionItems(
 		document: vscode.TextDocument,
-		position: vscode.Position,
-		token: vscode.CancellationToken,
-		context: vscode.CompletionContext
+		position: vscode.Position
 	): Promise<vscode.CompletionItem[] | vscode.CompletionList> {
 		// Check if the user just typed '@' or is in the middle of typing a reference
 		const linePrefix = document.lineAt(position).text.substring(0, position.character);
@@ -48,7 +46,7 @@ export class SymbolCompletionProvider implements vscode.CompletionItemProvider {
 			items.push(...fileItems);
 
 			// Add symbol completions
-			const symbolItems = await this.getSymbolCompletions(query, document.uri);
+			const symbolItems = await this.getSymbolCompletions(query);
 			items.push(...symbolItems);
 
 			// Add special @web completion
@@ -170,7 +168,7 @@ export class SymbolCompletionProvider implements vscode.CompletionItemProvider {
 	/**
 	 * Get code symbol completion items for the given query
 	 */
-	private async getSymbolCompletions(query: string, documentUri: vscode.Uri): Promise<vscode.CompletionItem[]> {
+	private async getSymbolCompletions(query: string): Promise<vscode.CompletionItem[]> {
 		const items: vscode.CompletionItem[] = [];
 
 		try {

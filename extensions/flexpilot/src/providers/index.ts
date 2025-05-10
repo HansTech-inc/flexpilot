@@ -11,7 +11,7 @@ import { GenericChatModelProvider } from './generic';
 import { modelConfigs } from '../context';
 import { GroqCloudChatModelProvider } from './groq';
 import { MistralAIChatModelProvider } from './mistral-ai';
-import { OpenAIChatModelProvider } from './openai';i
+import { OpenAIChatModelProvider } from './openai';
 import { GoogleChatModelProvider } from './google';
 import { AzureOpenAIChatModelProvider } from './azure';
 import { AnthropicChatModelProvider } from './anthropic';
@@ -85,7 +85,7 @@ const convertChatToCoreMessage = (message: vscode.LanguageModelChatMessage): Cor
 		}
 		// Return the `UserMessage` or `ToolMessage` based on the content.
 		if (toolResultParts.length) {
-			return { role: 'tool', content: toolResultParts };
+			return { role: 'user', content: toolResultParts };
 		} else if (textParts.length) {
 			return { role: 'user', content: textParts };
 		} else {
@@ -207,7 +207,7 @@ export const modelProviderManager = {
 						messages: convertedMessages,
 						abortSignal: abortController.signal,
 						experimental_toolCallStreaming: false,
-						prompt: prompts
+						prompt: prompts.default
 					});
 
 					// Listen for response parts and update the progress

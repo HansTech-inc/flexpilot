@@ -3,8 +3,6 @@
  *  Licensed under the GPL-3.0 License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
-
 /**
  * Interface representing a session entry in the session history.
  */

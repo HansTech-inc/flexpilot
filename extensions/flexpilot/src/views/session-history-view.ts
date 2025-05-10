@@ -2,7 +2,6 @@
 
 import * as vscode from 'vscode';
 import { SessionHistoryManager } from '../util/session-history-manager';
-import { ISessionHistoryEntry } from '../types/session';
 import { logger } from '../logger';
 
 export class SessionHistoryView implements vscode.WebviewViewProvider {
@@ -18,7 +17,7 @@ export class SessionHistoryView implements vscode.WebviewViewProvider {
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
+        _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
         this._view = webviewView;
@@ -137,7 +136,7 @@ export class SessionHistoryView implements vscode.WebviewViewProvider {
         return result === 'Clear All';
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
+    private _getHtmlForWebview(_webview: vscode.Webview) {
         // Return HTML content for the webview
         return `<!DOCTYPE html>
             <html lang="en">
