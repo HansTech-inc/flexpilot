@@ -828,6 +828,7 @@ export class AgentTools implements vscode.Disposable {
 		logger.info('Agent tools disposed');
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-private-class-members
 	private _processHtml(
 		htmlContent: string,
 		baseUrl: string,
