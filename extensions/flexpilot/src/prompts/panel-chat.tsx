@@ -3,25 +3,14 @@
  *  Licensed under the GPL-3.0 License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import '../jsx-config';
 import * as vscode from 'vscode';
 import {
-	Code,
-	Message,
 	jsxToChatMessage,
 	jsxToMarkdown,
 } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
-
-// Minimal JSX namespace for TSX compatibility in non-React environments
-// This allows TSX syntax for markdown/JSX-to-markdown utilities
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			[elemName: string]: any;
-		}
-	}
-}
 
 /**
  * Generates the welcome message for the user in the chat panel.
@@ -57,7 +46,7 @@ export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
 /**
  * Builds the title provider request for the chat model based on the previous conversation
  */
-export const buildTitleProviderRequest = (context: vscode.ChatContext) => {
+export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.LanguageModelChatMessage[] => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
@@ -80,11 +69,13 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext) => {
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({ role: 'system', content: `
+		jsxToChatMessage({
+			role: 'user',
+			content: `
 <h2>Important Instructions</h2>
 <ul>
 	<li>
-		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>(typeof process !== 'undefined' && process.platform) ? process.platform : 'unknown'</strong> operating system, assisting a fellow developer in <strong>crafting a perfect title for a chat conversation</strong>.
+		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting a perfect title for a chat conversation</strong>.
 	</li>
 	<li>
 		You must provide a <strong>concise title</strong> that encapsulates the main topic of the chat dialogue in <strong>under 10 words in a single sentence.</strong>
@@ -94,24 +85,14 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext) => {
 	</li>
 </ul>
 <h2>Response Format:</h2>
-<pre>
-	{`<chat-summary-title>Perfect title for the chat conversation</chat-summary-title>`}
-</pre>
+<pre>&lt;chat-summary-title&gt;Perfect title for the chat conversation&lt;/chat-summary-title&gt;</pre>
 
 <h2>Example Responses</h2>
-<pre>
-	{`<chat-summary-title>Optimizing SQL query performance</chat-summary-title>`}
-</pre>
-<pre>
-	{`<chat-summary-title>Debugging memory leaks in C++ applications</chat-summary-title>`}
-</pre>
-<pre>
-	{`<chat-summary-title>Configuring Kubernetes ingress controllers</chat-summary-title>`}
-</pre>
-<pre>
-	{`<chat-summary-title>Implementing JWT authentication in Node.js</chat-summary-title>`}
-</pre>
-` })
+<pre>&lt;chat-summary-title&gt;Optimizing SQL query performance&lt;/chat-summary-title&gt;</pre>
+<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
+<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
+<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>`
+		})
 	);
 
 	// Add the user prompt from the context history
@@ -150,17 +131,19 @@ Provide a concise title for the below chat conversation that encapsulates the ma
 export const buildFollowupProviderRequest = (
 	result: vscode.ChatResult,
 	context: vscode.ChatContext
-) => {
+): vscode.LanguageModelChatMessage[] => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({ role: 'system', content: `
+		jsxToChatMessage({
+			role: 'user',
+			content: `
 <h2>Important Instructions</h2>
 <ul>
 	<li>
-		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>(typeof process !== 'undefined' && process.platform) ? process.platform : 'unknown'</strong> operating system, assisting a fellow developer in <strong>crafting follow-up question</strong> for the current chat conversation.
+		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting follow-up question</strong> for the current chat conversation.
 	</li>
 	<li>
 		You must provide a <strong>short, one-sentence question</strong> that the <strong>user can ask naturally</strong> that follows from the previous few questions and answers. The question must be <strong>under 10 words</strong> or fewer and in a <strong>single line.</strong>
@@ -170,36 +153,29 @@ export const buildFollowupProviderRequest = (
 	</li>
 </ul>
 <h2>Response Format:</h2>
-<pre>
-	{`<follow-up-question>Short follow-up question</follow-up-question>`}
-</pre>
+<pre>&lt;follow-up-question&gt;Short follow-up question&lt;/follow-up-question&gt;</pre>
+
 <h2>Example Responses</h2>
-<pre>
-	{`<follow-up-question>How can I optimize this SQL query?</follow-up-question>`}
-</pre>
-<pre>
-	{`<follow-up-question>What are the best practices for using Docker?</follow-up-question>`}
-</pre>
-<pre>
-	{`<follow-up-question>How can I improve the performance of my React app?</follow-up-question>`}
-</pre>
-<pre>
-	{`<follow-up-question>What are the common pitfalls of using Node.js?</follow-up-question>`}
-</pre>
-` })
+<pre>&lt;follow-up-question&gt;How can I optimize this SQL query?&lt;/follow-up-question&gt;</pre>
+<pre>&lt;follow-up-question&gt;What are the best practices for using Docker?&lt;/follow-up-question&gt;</pre>
+<pre>&lt;follow-up-question&gt;How can I improve the performance of my React app?&lt;/follow-up-question&gt;</pre>
+<pre>&lt;follow-up-question&gt;What are the common pitfalls of using Node.js?&lt;/follow-up-question&gt;</pre>`
+		})
 	);
 
 	// Add the user prompt from the context history to the messages array
 	context.history.forEach((item) => {
-		if (item instanceof vscode.ChatResponseTurn) {
-			messages.push(
-				vscode.LanguageModelChatMessage.User(item.result.metadata?.request)
-			);
-			messages.push(
-				vscode.LanguageModelChatMessage.Assistant(
-					item.result.metadata?.response
-				)
-			);
+		if (item instanceof vscode.ChatResponseTurn && item.result.metadata) {
+			if (item.result.metadata.request) {
+				messages.push(
+					vscode.LanguageModelChatMessage.User(item.result.metadata.request)
+				);
+			}
+			if (item.result.metadata.response) {
+				messages.push(
+					vscode.LanguageModelChatMessage.Assistant(item.result.metadata.response)
+				);
+			}
 		}
 	});
 
@@ -225,34 +201,36 @@ export const buildRequest = async (
 	context: vscode.ChatContext,
 	model: string,
 	response: vscode.ChatResponseStream
-) => {
+): Promise<vscode.LanguageModelChatMessage[]> => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({ role: 'system', content: `
+		jsxToChatMessage({
+			role: 'user',
+			content: `
 <h1>Important Points</h1>
 <ul>
 	<li>
-		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>(typeof process !== 'undefined' && process.platform) ? process.platform : 'unknown'</strong> operating system, assisting a fellow developer.
+		You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer.
 	</li>
 	<li>Follow the user's requirements carefully & to the letter.</li>
 	<li>Keep your answers short and impersonal.</li>
 	<li>
-		You are powered by <b>{model}</b> Large Language Model
+		You are powered by <b>${model}</b> Large Language Model
 	</li>
 	<li>Use Markdown formatting in your answers.</li>
 	<li>
-		Make sure to include the programming language name at the start of the Markdown code blocks like below
+		Make sure to include the programming language name at the start of the Markdown code blocks
 	</li>
-	<Code language='python'>print('hello world')</Code>
+	<li><code>python\nprint('hello world')</code></li>
 	<li>Avoid wrapping the whole response in triple backticks.</li>
 	<li>
 		The active file or document is the source code the user is looking at right now.
 	</li>
-</ul>
-` })
+</ul>`
+		})
 	);
 
 	// --- Web Search Context Injection ---
@@ -286,7 +264,7 @@ export const buildRequest = async (
 			// Add the summary and citations as a system message
 			const citations = webResults.map((r, i) => `[${i+1}] ${r.title} (${r.url})`).join('\n');
 			messages.push(
-				jsxToChatMessage({ role: 'system', content: `
+				jsxToChatMessage({ role: 'user', content: `
 <h3>Web Search Context</h3>
 <p>${summary}</p>
 <p><strong>Citations:</strong><br/>${citations}</p>
@@ -294,7 +272,7 @@ export const buildRequest = async (
 			);
 		} catch (err) {
 			messages.push(
-				jsxToChatMessage({ role: 'system', content: `
+				jsxToChatMessage({ role: 'user', content: `
 Web search failed: ${String(err)}
 ` })
 			);
@@ -303,27 +281,27 @@ Web search failed: ${String(err)}
 
 	// Add the chat history prompts to the messages array
 	context.history.forEach((item) => {
-		if ('prompt' in item) {
-			return vscode.LanguageModelChatMessage.User(item.prompt);
-		} else {
+		if ('prompt' in item && item.prompt) {
+			messages.push(vscode.LanguageModelChatMessage.User(item.prompt));
+		} else if (item instanceof vscode.ChatResponseTurn) {
 			// Check if the response has metadata
-			if (item.result.metadata?.response?.trim()) {
-				const message = item.result.metadata?.response?.trim();
-				return vscode.LanguageModelChatMessage.Assistant(message);
-			}
-
-			// Loop through the response parts to get the markdown content
-			const messageParts: string[] = [];
-			for (const part of item.response) {
-				if (part.value instanceof vscode.MarkdownString) {
-					messageParts.push(part.value.value);
+			if (item.result.metadata?.response) {
+				const message = item.result.metadata.response.trim();
+				messages.push(vscode.LanguageModelChatMessage.Assistant(message));
+			} else {
+				// Loop through the response parts to get the markdown content
+				const messageParts: string[] = [];
+				for (const part of item.response) {
+					if (part.value instanceof vscode.MarkdownString) {
+						messageParts.push(part.value.value);
+					}
+				}
+				if (messageParts.length > 0) {
+					messages.push(
+						vscode.LanguageModelChatMessage.Assistant(messageParts.join('\n\n').trim())
+					);
 				}
 			}
-
-			// Check if the response has a `response` property
-			return vscode.LanguageModelChatMessage.Assistant(
-				messageParts.join('\n\n').trim()
-			);
 		}
 	});
 
@@ -356,3 +334,4 @@ export const panelChatPrompts = {
 		);
 	},
 };
+
