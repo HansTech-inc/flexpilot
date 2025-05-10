@@ -11,8 +11,7 @@ import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
-import type { Cheerio, CheerioAPI } from 'cheerio';
-import type { AnyNode, Element, Text } from 'domhandler';
+import type { Element } from 'domhandler';
 
 
 /**
