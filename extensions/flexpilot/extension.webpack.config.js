@@ -13,5 +13,11 @@ module.exports = withDefaults({
 	context: __dirname,
 	entry: {
 		extension: './src/extension.ts',
+	},
+	resolve: {
+		fallback: {
+			bufferutil: false,
+			'utf-8-validate': false
+		}
 	}
 });
