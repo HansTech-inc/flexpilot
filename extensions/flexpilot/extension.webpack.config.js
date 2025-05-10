@@ -19,5 +19,13 @@ module.exports = withDefaults({
 			bufferutil: false,
 			'utf-8-validate': false
 		}
-	}
+	},
+	ignoreWarnings: [
+		{
+			message: /the request of a dependency is an expression/
+		},
+		{
+			message: /require function is used in a way in which dependencies cannot be statically extracted/
+		}
+	]
 });
