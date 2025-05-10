@@ -32,8 +32,7 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 
 		this._setWebviewMessageListener(webviewView.webview);
 	}
-
-	privat@e _getHtmlForWebview() {
+	private _getHtmlForWebview() {
 		return `<!DOCTYPE html><html><head><title>Model Management</title></head><body><h1>Model Management</h1></body></html>`;
 	}
 

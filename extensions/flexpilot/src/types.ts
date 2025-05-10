@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { LanguageModelV1 } from 'ai';
+import * as vscode from 'vscode';
 
 /**
  * Interface for chat model call settings.
@@ -133,3 +134,39 @@ export interface IGitHubCopilotChatModel {
  * Interface representing a GitHub Copilot model.
  */
 export type IGitHubCopilotModel = IGitHubCopilotEmbeddingModel | IGitHubCopilotChatModel;
+
+export interface ChatMessage extends vscode.LanguageModelChatMessage {
+	role: ChatRole;
+	content: string;
+	value?: string;
+	appendText?: (text: string) => void;
+	appendMarkdown?: (markdown: string) => void;
+	appendCodeblock?: (code: string, language?: string) => void;
+}
+
+export enum ChatRole {
+	System = 'system',
+	User = 'user',
+	Assistant = 'assistant',
+	ASSISTANT = 'assistant'  // Alias for backward compatibility
+}
+
+export interface Feedback {
+	up: boolean;
+	down: boolean;
+}
+
+export enum PanelMode {
+	Chat = 'chat',
+	Settings = 'settings',
+	Help = 'help',
+	EXPLAIN = 'explain',
+	OPTIMIZE = 'optimize',
+	DOCS = 'docs'
+}
+
+export interface Tool {
+	name: string;
+	description: string;
+	execute: (args: any) => Promise<any>;
+}

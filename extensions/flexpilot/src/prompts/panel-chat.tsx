@@ -11,6 +11,8 @@ import {
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
 import { ChatMessage, ChatRole, Feedback, PanelMode } from '../types';
+import * as React from 'react';
+import { ReactNode, CSSProperties } from 'react';
 
 /**
  * Generates the welcome message for the user in the chat panel.
@@ -409,4 +411,35 @@ export const getThinkingMessage = (): ChatMessage => {
 		renderMarkdown: true // Allow markdown for italics
 	});
 };
+
+export interface PanelProps {
+	children?: ReactNode;
+	className?: string;
+	style?: CSSProperties;
+}
+
+export const Panel: React.FC<PanelProps> = ({ children, className, style }) => {
+	return (
+		<div className={className} style={style}>
+			{children}
+		</div>
+	);
+};
+
+export interface MessageProps {
+	message: ChatMessage;
+	feedback?: Feedback;
+	onFeedback?: (feedback: Feedback) => void;
+	children?: ReactNode;
+}
+
+export const Message: React.FC<MessageProps> = ({ children }) => {
+	// ... rest of the component implementation
+	return (
+		<div className="message">
+			{children}
+		</div>
+	);
+};
+
 

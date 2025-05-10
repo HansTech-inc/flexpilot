@@ -53,7 +53,9 @@
     "typescript": "^5.3.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@types/puppeteer": "^7.0.0",
+    "@types/node-fetch": "^2.6.7"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^1.0.8",

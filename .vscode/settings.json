@@ -171,5 +171,5 @@
 	"eslint.useFlatConfig": true,
 	"editor.occurrencesHighlightDelay": 0,
 	"typescript.experimental.expandableHover": true,
-	"workbench.colorTheme": "One Monokai"
+	"workbench.colorTheme": "Default Dark Modern"
 }
