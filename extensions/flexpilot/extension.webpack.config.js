@@ -17,15 +17,32 @@ module.exports = withDefaults({
 	resolve: {
 		fallback: {
 			bufferutil: false,
-			'utf-8-validate': false
+			'utf-8-validate': false,
+			fs: false,
+			path: require.resolve('path-browserify'),
+			os: require.resolve('os-browserify')
 		}
 	},
-	ignoreWarnings: [
-		{
-			message: /the request of a dependency is an expression/
-		},
-		{
-			message: /require function is used in a way in which dependencies cannot be statically extracted/
-		}
-	]
+	module: {
+		exprContextCritical: false,
+		unknownContextRegExp: /^\.\/.*$/,
+		rules: [
+			{
+				test: /node_modules/,
+				use: 'null-loader'
+			}
+		]
+	},
+	optimization: {
+		minimize: false,
+		moduleIds: 'named',
+		chunkIds: 'named',
+		mangleExports: false
+	},
+	stats: {
+		errorDetails: true
+	},
+	performance: {
+		hints: false
+	}
 });

@@ -39,6 +39,7 @@
 	],
 	"exclude": [
 		"node_modules",
-		".vscode-test"
+		".vscode-test",
+		"src/prompts/panel-chat-old-working.tsx"
 	]
 }
