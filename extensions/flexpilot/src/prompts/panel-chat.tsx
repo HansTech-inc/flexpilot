@@ -3,7 +3,10 @@
  *  Licensed under the GPL-3.0 License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import '../jsx-config';
+/** @jsx jsx */
+import { jsx } from '@emotion/react';
+import { css } from '@emotion/react';
+import * as React from 'react';
 import * as vscode from 'vscode';
 import {
 	jsxToChatMessage,
@@ -13,33 +16,68 @@ import { Message } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
 
+const styles = {
+	container: css`
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	`,
+	header: css`
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	`,
+	emoji: css`
+		font-size: 2.2em;
+	`,
+	title: css`
+		font-weight: 700;
+		font-size: 1.3em;
+		color: var(--vscode-textLink-foreground);
+	`,
+	description: css`
+		font-size: 1.1em;
+		color: var(--vscode-editor-foreground);
+	`,
+	list: css`
+		margin-top: 10px;
+		color: var(--vscode-descriptionForeground);
+		font-size: 1em;
+	`,
+	footer: css`
+		margin-top: 12px;
+		color: var(--vscode-textLink-foreground);
+		font-weight: 600;
+	`
+};
+
 /**
  * Generates the welcome message for the user in the chat panel.
  */
 export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
 	return jsxToMarkdown({
-		children: (
+		children: `
 			<div>
-				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-					<span style="font-size: 2.2em;">🚀</span>
-					<span style="font-weight: 700; font-size: 1.3em; color: #6C63FF;">Welcome, <b>@{username}</b>!</span>
+				<div class="flex items-center gap-3 mb-2">
+					<span class="text-3xl">🚀</span>
+					<span class="font-bold text-xl text-primary">Welcome, @${username}!</span>
 				</div>
-				<p style="font-size: 1.1em; color: #444;">
+				<p class="text-lg text-gray-700">
 					I'm <b>Flexpilot</b> — your next-gen AI pair programmer.<br/>
 					Ready to help you <b>code faster, smarter, and with confidence</b>.<br/>
-					<span style="color: #6C63FF;">Ask me anything, or type <code>/</code> for commands.</span>
+					<span class="text-primary">Ask me anything, or type <code>/</code> for commands.</span>
 				</p>
-				<ul style="margin-top: 10px; color: #888; font-size: 1em;">
+				<ul class="mt-3 text-gray-600">
 					<li>✨ <b>Autonomous agent</b> for complex, multi-step tasks</li>
 					<li>🔍 <b>Understands your codebase</b> and context</li>
 					<li>🌐 <b>Web search</b> and <b>tool integration</b> built-in</li>
 					<li>🧠 <b>Proactive suggestions</b> and <b>auto-fixes</b></li>
 				</ul>
-				<p style="margin-top: 12px; color: #6C63FF; font-weight: 600;">
+				<p class="mt-3 text-primary font-semibold">
 					Let's build something amazing together!
 				</p>
 			</div>
-		)
+		`
 	});
 };
 
@@ -322,13 +360,13 @@ export const panelChatPrompts = {
 	 * Generates the help text prefix.
 	 */
 	getHelpTextPrefix(): vscode.MarkdownString {
-		return jsxToMarkdown(
-			{
-				content: `
-📚 Explore the Flexpilot IDE official documentation <a href='https://flexpilot.ai'>here</a> for all the details.
-`
-			}
-		);
+		return jsxToMarkdown({
+			children: `
+				<div>
+					📚 Explore the Flexpilot IDE official documentation <a href='https://flexpilot.ai'>here</a> for all the details.
+				</div>
+			`
+		});
 	},
 };
 

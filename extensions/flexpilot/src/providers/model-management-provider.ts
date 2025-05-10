@@ -16,11 +16,11 @@ export class ModelManagementProvider implements vscode.WebviewViewProvider {
 		private readonly _extensionUri: vscode.Uri,
 	) { }
 
-	public resolveWebviewView(
+	async resolveWebviewView(
 		webviewView: vscode.WebviewView,
 		_context: vscode.WebviewViewResolveContext,
-		_token: vscode.CancellationToken,
-	) {
+		_token: vscode.CancellationToken
+	): Promise<void> {
 		webviewView.webview.options = {
 			enableScripts: true,
 			localResourceRoots: [

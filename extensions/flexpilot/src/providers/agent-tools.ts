@@ -9,7 +9,7 @@ import { ThemeIcon } from 'vscode';
 import fetch from 'node-fetch';
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import type { Node as CheerioNode } from 'cheerio';
+import type { CheerioAPI, Element } from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
 
@@ -494,14 +494,14 @@ export class AgentTools implements vscode.Disposable {
                     // Extract just the body text
                     content = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 3000);
                     // Extract code blocks
-                    $('pre, code').each((_: number, el: CheerioNode) => {
+                    $('pre, code').each((_: number, el: Element) => {
                         const code = $(el).text();
                         if (code && code.length > 10 && codeBlocks.length < 5) {
                             codeBlocks.push(code.slice(0, 500));
                         }
                     });
                     // Extract images
-                    $('img').each((_: number, el: CheerioNode) => {
+                    $('img').each((_: number, el: Element) => {
                         const src = $(el).attr('src');
                         if (src && images.length < 3) {
                             let absUrl = src;

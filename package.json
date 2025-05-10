@@ -68,6 +68,10 @@
     "update-build-ts-version": "npm install typescript@next && tsc -p ./build/tsconfig.build.json"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "@flexpilot/gulp-electron": "github:flexpilot-ai/vscode-gulp-electron",
     "@microsoft/1ds-core-js": "^3.2.13",
     "@microsoft/1ds-post-js": "^3.2.13",
@@ -222,7 +226,10 @@
     "webpack-cli": "^5.1.4",
     "webpack-stream": "^7.0.0",
     "xml2js": "^0.5.0",
-    "yaserver": "^0.4.0"
+    "yaserver": "^0.4.0",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@emotion/types": "^0.7.0"
   },
   "overrides": {
     "node-gyp-build": "4.8.1",
