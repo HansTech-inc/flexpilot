@@ -73,6 +73,7 @@ function withNodeDefaults(/**@type WebpackConfig & { context: string }*/extConfi
 		// yes, really source maps
 		devtool: 'source-map',
 		plugins: nodePlugins(extConfig.context),
+		ignoreWarnings: [() => true],
 	};
 
 	return merge(defaultConfig, extConfig);
