@@ -11,7 +11,7 @@ import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
-import type { Cheerio, AnyNode, CheerioAPI, CheerioElement } from 'cheerio';
+import type { Cheerio, CheerioAPI,  Element } from 'cheerio';
 
 
 /**
@@ -494,14 +494,14 @@ export class AgentTools implements vscode.Disposable {
 					// Extract just the body text
 					content = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 3000);
 					// Extract code blocks
-					$('pre, code').each((_: number, el: CheerioElement) => {
+					$('pre, code').each((_: number, el: Element) => {
 						const code = $(el).text();
 						if (code && code.length > 10 && codeBlocks.length < 5) {
 							codeBlocks.push(code.slice(0, 500));
 						}
 					});
 					// Extract images
-					$('img').each((_: number, el: CheerioElement) => {
+					$('img').each((_: number, el: Element) => {
 						const src = $(el).attr('src');
 						if (src && images.length < 3) {
 							let absUrl = src;
@@ -841,7 +841,7 @@ export class AgentTools implements vscode.Disposable {
 		$('script, style, noscript, iframe, svg, path, symbol, meta, link').remove();
 
 		// If a query is provided, try to find the most relevant part of the page
-		let targetNodes: Cheerio<CheerioElement>;
+		let targetNodes: Cheerio<Element>;
 		if (query) {
 			// Search for the query in text nodes, and select the parent element
 			const elementsContainingQuery = $(`*:contains('${query}')`)
@@ -870,7 +870,7 @@ export class AgentTools implements vscode.Disposable {
 
 		// Extract links
 		const links: { text: string, href: string }[] = [];
-		absoluteUrlNodes.find('a').each((_: number, linkElement: CheerioElement) => {
+		absoluteUrlNodes.find('a').each((_: number, linkElement: Element) => {
 			const href = $(linkElement).attr('href');
 			const text = $(linkElement).text().trim();
 			if (href && text) {
@@ -886,7 +886,7 @@ export class AgentTools implements vscode.Disposable {
 	}
 
 	private _extractTextFromNodes(
-		nodes: Cheerio<AnyNode>,
+		nodes: Cheerio<Element>,
 		baseUrl: string,
 		$: CheerioAPI,
 		options: { length?: number; preserveNewlines?: boolean } = { length: 8000, preserveNewlines: false }
@@ -894,14 +894,13 @@ export class AgentTools implements vscode.Disposable {
 		const { length = 8000, preserveNewlines = false } = options;
 		let text = '';
 
-		nodes.each((_: number, node: AnyNode) => {
-			const element = node as CheerioElement;
-			if (element.type === 'text') {
-				text += (element as any).data;
-			} else if (element.type === 'tag') {
-				if (element.name === 'a') {
-					const href = element.attribs?.href;
-					const linkText = $(element).text();
+		nodes.each((_: number, node: Element) => {
+			if (node.type === 'text') {
+				text += node.data;
+			} else if (node.type === 'tag') {
+				if (node.name === 'a') {
+					const href = node.attribs?.href;
+					const linkText = $(node).text();
 					if (href && linkText) {
 						try {
 							const absoluteHref = new URL(href, baseUrl).toString();
@@ -910,11 +909,11 @@ export class AgentTools implements vscode.Disposable {
 							text += `[${linkText}](${href})`;
 						}
 					} else {
-						text += $(element).text();
+						text += $(node).text();
 					}
-				} else if (element.name === 'img') {
-					const alt = element.attribs?.alt;
-					const src = element.attribs?.src;
+				} else if (node.name === 'img') {
+					const alt = node.attribs?.alt;
+					const src = node.attribs?.src;
 					if (alt && src) {
 						try {
 							const absoluteSrc = new URL(src, baseUrl).toString();
@@ -932,14 +931,14 @@ export class AgentTools implements vscode.Disposable {
 							text += `[Image](${src})`;
 						}
 					}
-				} else if (element.name === 'br' || element.name === 'p' || element.name === 'div' || /^h[1-6]$/.test(element.name)) {
+				} else if (node.name === 'br' || node.name === 'p' || node.name === 'div' || /^h[1-6]$/.test(node.name)) {
 					if (!preserveNewlines) {
 						text += '\n';
 					} else {
-						text += $(element).text();
+						text += $(node).text();
 					}
 				} else {
-					text += $(element).text();
+					text += $(node).text();
 				}
 			}
 			if (text.length >= length) {
@@ -955,9 +954,9 @@ export class AgentTools implements vscode.Disposable {
 		return text.length > length ? text.substring(0, length) + '...' : text;
 	}
 
-	private _makeLinksAbsolute(nodes: Cheerio<AnyNode>, baseUrl: string, $: CheerioAPI): Cheerio<AnyNode> {
-		nodes.find('a').each((_: number, el: CheerioElement) => {
-			const element = el as CheerioElement;
+	private _makeLinksAbsolute(nodes: Cheerio<Element>, baseUrl: string, $: CheerioAPI): Cheerio<Element> {
+		nodes.find('a').each((_: number, el: Element) => {
+			const element = el as Element;
 			const href = element.attribs?.href;
 			if (href) {
 				try {
@@ -968,8 +967,8 @@ export class AgentTools implements vscode.Disposable {
 				}
 			}
 		});
-		nodes.find('img').each((_: number, el: CheerioElement) => {
-			const element = el as CheerioElement;
+		nodes.find('img').each((_: number, el: Element) => {
+			const element = el as Element;
 			const src = element.attribs?.src;
 			if (src) {
 				try {

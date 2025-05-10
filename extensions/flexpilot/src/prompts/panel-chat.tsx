@@ -5,32 +5,31 @@
 
 import * as vscode from 'vscode';
 import {
+	Code,
+	Message,
 	jsxToChatMessage,
 	jsxToMarkdown,
 } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
-import { AgentTools } from '../providers/agent-tools';
-import { ChatMessage, ChatRole, PanelMode } from '../types';
-import * as React from 'react';
-import { ReactNode, CSSProperties } from 'react';
 
 /**
  * Generates the welcome message for the user in the chat panel.
  */
-export const getWelcomeMessage = (modelName?: string): vscode.MarkdownString => {
-	const modelDisplayName = modelName || 'current model';
-	const content = `Welcome to Flexpilot! I'm your AI assistant, powered by ${modelDisplayName}. How can I help you today?`;
-	return jsxToMarkdown({
-		props: {},
-		type: 'div',
-		children: `<div>${content}</div>`
-	});
+export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
+	return jsxToMarkdown(
+		<Message role='user'>
+			<p>
+				Welcome, <b>@{username}</b>, I'm your pair programmer and I'm here to
+				help you get things done faster.
+			</p>
+		</Message>
+	);
 };
 
 /**
  * Builds the title provider request for the chat model based on the previous conversation
  */
-export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.LanguageModelChatMessage[] => {
+export const buildTitleProviderRequest = (context: vscode.ChatContext) => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
@@ -53,59 +52,81 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({
-			children: `<div>
+		jsxToChatMessage(
+			<Message role='system'>
 				<h2>Important Instructions</h2>
-				<ul>
-					<li>
-						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting a perfect title for a chat conversation</strong>.
-					</li>
-					<li>
-						You must provide a <strong>concise title</strong> that encapsulates the main topic of the chat dialogue in <strong>under 10 words in a single sentence.</strong>
-					</li>
-					<li>
-						<strong>Very Important: Strictly follow below response format in the output</strong>
-					</li>
-				</ul>
-				<h2>Response Format:</h2>
-				<pre>&lt;chat-summary-title&gt;Perfect title for the chat conversation&lt;/chat-summary-title&gt;</pre>
+<ul>
+  <li>
+    You are <strong>Flexpilot</strong>, a seasoned <strong>full-stack developer</strong> and
+    <strong>AI programming assistant</strong>, operating inside the <strong>VS Code IDE</strong>
+    on a <strong>{process.platform}</strong> system.
+  </li>
+  <li>
+    You collaborate with a fellow developer, offering professional and efficient guidance drawn
+    from your expertise in modern frontend and backend technologies.
+  </li>
+  <li>
+    Your task is to generate a <strong>concise, meaningful title</strong> for the current chat
+    conversation, accurately summarizing its core topic or technical focus.
+  </li>
+  <li>
+    The title must be <strong>under 10 words</strong>, written in a <strong>single sentence</strong>,
+    and formatted <strong>exactly</strong> as shown below.
+  </li>
+  <li>
+    <strong>Important:</strong> Treat the title like a high-quality Git commit or pull request name —
+    informative, clean, and developer-friendly.
+  </li>
+</ul>
 
-				<h2>Example Responses</h2>
-				<pre>&lt;chat-summary-title&gt;Optimizing SQL query performance&lt;/chat-summary-title&gt;</pre>
-				<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
-				<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
-				<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>
-			</div>`,
-			role: 'system'
-		})
+<h2>Response Format:</h2>
+<pre>
+{`<chat-summary-title>Perfect title for the chat conversation</chat-summary-title>`}
+</pre>
+
+<h2>Example Responses</h2>
+<pre>
+{`<chat-summary-title>Optimizing SQL query performance</chat-summary-title>`}
+</pre>
+<pre>
+{`<chat-summary-title>Debugging memory leaks in C++ applications</chat-summary-title>`}
+</pre>
+<pre>
+{`<chat-summary-title>Configuring Kubernetes ingress controllers</chat-summary-title>`}
+</pre>
+<pre>
+{`<chat-summary-title>Implementing JWT authentication in Node.js</chat-summary-title>`}
+</pre>
+
+			</Message>
+		)
 	);
 
+	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage({
-			children: '<div>Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format</div>',
-			role: 'user'
-		})
-	);
-
-	messages.push(
-		jsxToChatMessage({
-			children: `<div>
+		jsxToChatMessage(
+			<Message role='user'>
+				<p>
+					Provide a concise title for the below chat conversation that
+					encapsulates the main topic discussed.{' '}
+					<strong>It must be under 10 words in a single sentence</strong> and{' '}
+					<strong>strictly follow response format</strong>
+				</p>
 				<h3>Chat Conversation</h3>
 				<ul>
-					${prompt ? `
+					{prompt && (
 						<li>
-							<strong>User:</strong> ${prompt}
+							<strong>User:</strong> {prompt}
 						</li>
-					` : ''}
-					${response ? `
+					)}
+					{response && (
 						<li>
-							<strong>Assistant:</strong> ${response}
+							<strong>Assistant:</strong> {response}
 						</li>
-					` : ''}
+					)}
 				</ul>
-			</div>`,
-			role: 'user'
-		})
+			</Message>
+		)
 	);
 
 	// Return the generated messages array for the chat model
@@ -118,52 +139,70 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 export const buildFollowupProviderRequest = (
 	result: vscode.ChatResult,
 	context: vscode.ChatContext
-): vscode.LanguageModelChatMessage[] => {
+) => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({
-			children: `<div>
+		jsxToChatMessage(
+			<Message role='system'>
 				<h2>Important Instructions</h2>
 				<ul>
 					<li>
-						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting follow-up question</strong> for the current chat conversation.
+						You are an AI programming assistant and a skilled programmer named{' '}
+						<strong>Flexpilot</strong>, who is{' '}
+						<strong>working inside VS Code IDE</strong> in{' '}
+						<strong>{process.platform}</strong> operating system, assisting a
+						fellow developer in <strong>crafting follow-up question</strong> for
+						the current chat conversation.
 					</li>
 					<li>
-						You must provide a <strong>short, one-sentence question</strong> that the <strong>user can ask naturally</strong> that follows from the previous few questions and answers. The question must be <strong>under 10 words</strong> or fewer and in a <strong>single line.</strong>
+						You must provide a <strong>short, one-sentence question</strong>{' '}
+						that the <strong>user can ask naturally</strong> that follows from
+						the previous few questions and answers. The question must be{' '}
+						<strong>under 10 words</strong> or fewer and in a{' '}
+						<strong>single line.</strong>
 					</li>
 					<li>
-						<strong>Very Important: Strictly follow below response format in the output</strong>
+						<strong>
+							Very Important: Strictly follow below response format in the
+							output
+						</strong>
 					</li>
 				</ul>
 				<h2>Response Format:</h2>
-				<pre>&lt;follow-up-question&gt;Short follow-up question&lt;/follow-up-question&gt;</pre>
-
+				<pre>
+					{`<follow-up-question>Short follow-up question</follow-up-question>`}
+				</pre>
 				<h2>Example Responses</h2>
-				<pre>&lt;follow-up-question&gt;How can I optimize this SQL query?&lt;/follow-up-question&gt;</pre>
-				<pre>&lt;follow-up-question&gt;What are the best practices for using Docker?&lt;/follow-up-question&gt;</pre>
-				<pre>&lt;follow-up-question&gt;How can I improve the performance of my React app?&lt;/follow-up-question&gt;</pre>
-				<pre>&lt;follow-up-question&gt;What are the common pitfalls of using Node.js?&lt;/follow-up-question&gt;</pre>
-			</div>`,
-			role: 'system'
-		})
+				<pre>
+					{`<follow-up-question>How can I optimize this SQL query?</follow-up-question>`}
+				</pre>
+				<pre>
+					{`<follow-up-question>What are the best practices for using Docker?</follow-up-question>`}
+				</pre>
+				<pre>
+					{`<follow-up-question>How can I improve the performance of my React app?</follow-up-question>`}
+				</pre>
+				<pre>
+					{`<follow-up-question>What are the common pitfalls of using Node.js?</follow-up-question>`}
+				</pre>
+			</Message>
+		)
 	);
 
 	// Add the user prompt from the context history to the messages array
 	context.history.forEach((item) => {
-		if (item instanceof vscode.ChatResponseTurn && item.result.metadata) {
-			if (item.result.metadata.request) {
-				messages.push(
-					vscode.LanguageModelChatMessage.User(item.result.metadata.request)
-				);
-			}
-			if (item.result.metadata.response) {
-				messages.push(
-					vscode.LanguageModelChatMessage.Assistant(item.result.metadata.response)
-				);
-			}
+		if (item instanceof vscode.ChatResponseTurn) {
+			messages.push(
+				vscode.LanguageModelChatMessage.User(item.result.metadata?.request)
+			);
+			messages.push(
+				vscode.LanguageModelChatMessage.Assistant(
+					item.result.metadata?.response
+				)
+			);
 		}
 	});
 
@@ -175,10 +214,19 @@ export const buildFollowupProviderRequest = (
 
 	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage({
-			children: '<div>Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.</div>',
-			role: 'user'
-		})
+		jsxToChatMessage(
+			<Message role='user'>
+				<p>
+					Write a short (under 10 words) one-sentence follow up question that
+					the user can ask naturally that follows from the previous few
+					questions and answers.
+				</p>
+				<h2>Response Format:</h2>
+				<pre>
+					{`<follow-up-question>Short follow-up question</follow-up-question>`}
+				</pre>
+			</Message>
+		)
 	);
 
 	// Return the generated messages array for the chat model
@@ -190,112 +238,67 @@ export const buildRequest = async (
 	context: vscode.ChatContext,
 	model: string,
 	response: vscode.ChatResponseStream
-): Promise<vscode.LanguageModelChatMessage[]> => {
+) => {
 	// Initialize the messages array to store the generated messages
 	const messages: vscode.LanguageModelChatMessage[] = [];
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage({
-			children: `<div>
+		jsxToChatMessage(
+			<Message role='system'>
 				<h1>Important Points</h1>
 				<ul>
 					<li>
-						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer.
+						You are an AI programming assistant and a skilled programmer named{' '}
+						<strong>Flexpilot</strong>, who is{' '}
+						<strong>working inside VS Code IDE</strong> in{' '}
+						<strong>{process.platform}</strong> operating system, assisting a
+						fellow developer.
 					</li>
 					<li>Follow the user's requirements carefully & to the letter.</li>
 					<li>Keep your answers short and impersonal.</li>
 					<li>
-						You are powered by <b>${model}</b> Large Language Model
+						You are powered by <b>{model}</b> Large Language Model
 					</li>
 					<li>Use Markdown formatting in your answers.</li>
 					<li>
-						Make sure to include the programming language name at the start of the Markdown code blocks
+						Make sure to include the programming language name at the start of
+						the Markdown code blocks like below
 					</li>
-					<li><code>python\nprint('hello world')</code></li>
+					<Code language='python'>print('hello world')</Code>
 					<li>Avoid wrapping the whole response in triple backticks.</li>
 					<li>
-						The active file or document is the source code the user is looking at right now.
+						The active file or document is the source code the user is looking
+						at right now.
 					</li>
 				</ul>
-			</div>`,
-			role: 'system'
-		})
+			</Message>
+		)
 	);
-
-	// --- Web Search Context Injection ---
-	const instructions: string[] = [];
-	context.history.forEach((item) => {
-		if ('prompt' in item && item.prompt) {
-			instructions.push(item.prompt);
-		}
-	});
-	instructions.push(request.prompt);
-
-	const webRefInstruction = instructions.find(instr => /@web\b/i.test(instr));
-	if (webRefInstruction) {
-		const agentTools = new AgentTools();
-		const webQuery = webRefInstruction.replace(/@web\b/gi, '').trim() || 'web search';
-		try {
-			const webResults = await agentTools.searchWebStructured(webQuery);
-			// Compose a prompt for the LLM to synthesize a curated answer and cite sources
-			const llmPrompt = `You are a smart assistant. Given the following web search results for the query: "${webQuery}", synthesize a clear, direct, and relevant answer. Use the extracted content to answer, and cite or link to the most relevant sources.\n\n` +
-				webResults.map((r, i) => `Source [${i+1}]: ${r.title} (${r.url})\nContent: ${r.extractedContent}\n`).join('\n') +
-			`\n---\nPlease write a concise answer to the query, referencing the sources as [1], [2], etc., where appropriate. Include links where helpful.`
-			const llmResult = await vscode.commands.executeCommand<any>(
-				'vscode.lm.chat.complete',
-				[
-					{ role: 'system', content: 'You are a helpful assistant that summarizes web search results and always cites sources.' },
-					{ role: 'user', content: llmPrompt }
-				],
-				{ model: undefined, maxTokens: 512, temperature: 0.2 }
-			);
-			const summary = llmResult?.choices?.[0]?.message?.content || '[Failed to summarize with LLM]';
-			// Add the summary and citations as a system message
-			const citations = webResults.map((r, i) => `[${i+1}] ${r.title} (${r.url})`).join('\n');
-			messages.push(
-				jsxToChatMessage({
-					children: `<div>
-						<h3>Web Search Context</h3>
-						<p>${summary}</p>
-						<p><strong>Citations:</strong><br/>${citations}</p>
-					</div>`,
-					role: 'system'
-				})
-			);
-		} catch (err) {
-			messages.push(
-				jsxToChatMessage({
-					children: `<div>Web search failed: ${String(err)}</div>`,
-					role: 'system'
-				})
-			);
-		}
-	}
 
 	// Add the chat history prompts to the messages array
 	context.history.forEach((item) => {
-		if ('prompt' in item && item.prompt) {
-			messages.push(vscode.LanguageModelChatMessage.User(item.prompt));
-		} else if (item instanceof vscode.ChatResponseTurn) {
+		if ('prompt' in item) {
+			return vscode.LanguageModelChatMessage.User(item.prompt);
+		} else {
 			// Check if the response has metadata
-			if (item.result.metadata?.response) {
-				const message = item.result.metadata.response.trim();
-				messages.push(vscode.LanguageModelChatMessage.Assistant(message));
-			} else {
-				// Loop through the response parts to get the markdown content
-				const messageParts: string[] = [];
-				for (const part of item.response) {
-					if (part.value instanceof vscode.MarkdownString) {
-						messageParts.push(part.value.value);
-					}
-				}
-				if (messageParts.length > 0) {
-					messages.push(
-						vscode.LanguageModelChatMessage.Assistant(messageParts.join('\n\n').trim())
-					);
+			if (item.result.metadata?.response?.trim()) {
+				const message = item.result.metadata?.response?.trim();
+				return vscode.LanguageModelChatMessage.Assistant(message);
+			}
+
+			// Loop through the response parts to get the markdown content
+			const messageParts: string[] = [];
+			for (const part of item.response) {
+				if (part.value instanceof vscode.MarkdownString) {
+					messageParts.push(part.value.value);
 				}
 			}
+
+			// Check if the response has a `response` property
+			return vscode.LanguageModelChatMessage.Assistant(
+				messageParts.join('\n\n').trim()
+			);
 		}
 	});
 
@@ -317,98 +320,15 @@ export const panelChatPrompts = {
 	/**
 	 * Generates the help text prefix.
 	 */
-	getHelpTextPrefix(mode: PanelMode, modelName?: string): vscode.MarkdownString {
-		const modelDisplayName = modelName || 'current model';
-		let content;
-		if (mode === PanelMode.EXPLAIN) {
-			content = `### Explain Code
-The current file and your selection will be sent to the ${modelDisplayName} for an explanation.`;
-		} else if (mode === PanelMode.OPTIMIZE) {
-			content = `### Optimize Code
-The current file and your selection (if any) will be sent to the ${modelDisplayName} to be optimized. The model will respond with suggestions.`;
-		} else if (mode === PanelMode.DOCS) {
-			content = `### Generate Docs
-The current file and your selection (if any) will be sent to the ${modelDisplayName} to generate documentation.`;
-		} else { // default to CHAT
-			content = `### Chat with ${modelDisplayName}
-Ask any question or enter a command. Use \`/\` to see a list of commands.`;
-		}
-		return jsxToMarkdown({
-			props: {},
-			type: 'div',
-			children: `<div>${content}</div>`
-		});
+	getHelpTextPrefix(): vscode.MarkdownString {
+		return jsxToMarkdown(
+			<Message role='user'>
+				<p>
+					{/* allow-any-unicode-next-line */}
+					📚 Explore the Flexpilot IDE official documentation{' '}
+					<a href='https://flexpilot.ai'>here</a> for all the details.
+				</p>
+			</Message>
+		);
 	},
 };
-
-export const getProcessingMessage = () => {
-	const content = 'Processing your request...';
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '',
-		customRender: true,
-		children: `<div>${content}</div>`,
-		renderMarkdown: false // Explicitly false as it's a status message
-	});
-};
-
-export const getErrorMessage = (errorMessage: string) => {
-	const content = `Sorry, I encountered an error: ${errorMessage}`;
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '',
-		customRender: true,
-		children: `<div>${content}</div>`,
-		renderMarkdown: false // Error messages are typically plain
-	});
-};
-
-export const getInitialMessageForExistingChat = (modelName?: string, history?: ChatMessage[]) => {
-	if (history && history.length > 0) {
-		// If there's history, the last message usually serves as a good "initial" state.
-		// Or, we could return a specific message indicating the chat is being continued.
-		// For now, let's just return null and let the existing history render.
-		return null;
-	}
-	const modelDisplayName = modelName || 'current model';
-	const content = `Continuing your session with ${modelDisplayName}. What's next?`;
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '',
-		customRender: true,
-		children: `<div>${content}</div>`,
-	});
-};
-
-export const getThinkingMessage = (): ChatMessage => {
-	const content = '_Flexpilot is thinking..._';
-	return jsxToChatMessage({
-		role: ChatRole.ASSISTANT,
-		content: '', // Content is from children
-		customRender: true, // Uses a custom rendering logic, not direct markdown
-		children: `<div>${content}</div>`,
-		isLoading: true, // Special flag for UI to show loading indicator perhaps
-		renderMarkdown: true // Allow markdown for italics
-	});
-};
-
-export interface PanelProps {
-	children?: ReactNode;
-	className?: string;
-	style?: CSSProperties;
-}
-
-export const Panel: React.FC<PanelProps> = ({ children, className, style }: PanelProps) => {
-	return <div className={className} style={style}>{children}</div>;
-};
-
-export interface MessageProps {
-	message: ChatMessage;
-	children?: ReactNode;
-}
-
-export const Message: React.FC<MessageProps> = ({ children }: MessageProps) => {
-	return <div>{children}</div>;
-};
-
-
