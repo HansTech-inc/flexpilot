@@ -49,14 +49,5 @@ process.on('unhandledRejection', (reason, p) => {
 });
 
 // Load all the gulpfiles only if running tasks other than the editor tasks
-require('./gulpfile.cli.js');
-require('./gulpfile.compile.js');
-require('./gulpfile.editor.js');
-require('./gulpfile.extensions.js');
-require('./gulpfile.hygiene.js');
-require('./gulpfile.reh.js');
-require('./gulpfile.scan.js');
-require('./gulpfile.vscode.js');
-require('./gulpfile.vscode.linux.js');
-require('./gulpfile.vscode.web.js');
-require('./gulpfile.vscode.win32.js');
+require('glob').sync('gulpfile.*.js', { cwd: __dirname })
+	.forEach(f => require(`./${f}`));

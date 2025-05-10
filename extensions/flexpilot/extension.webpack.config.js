@@ -23,19 +23,23 @@ module.exports = withDefaults({
 			os: require.resolve('os-browserify')
 		}
 	},
+	
+	unknownContextRegExp: /$^/,
+	unknownContextCritical: false,
+	exprContextRegExp: /$^/,
+	exprContextCritical: false,
+	wrappedContextRegExp: /$^/,
+	wrappedContextCritical: false,
 	optimization: {
-		minimize: false
-	},
-	module: {
-		exprContextCritical: false,
-		unknownContextCritical: false,
-		strictExportPresence: false
+		minimize: false,
+		moduleIds: 'named',
+		chunkIds: 'named',
+		mangleExports: false
 	},
 	stats: {
-		warningsFilter: [
-			/Critical dependency/,
-			/the request of a dependency is an expression/,
-			/require function is used in a way in which dependencies cannot be statically extracted/
-		]
+		errorDetails: true
+	},
+	performance: {
+		hints: false
 	}
 });
