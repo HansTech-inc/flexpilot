@@ -25,6 +25,7 @@ import SessionManager from './interfaces/session-manager';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { AgentTools } from './providers/agent-tools';
 
 /**
  * Activates the extension.
@@ -91,6 +92,22 @@ export async function activate(context: vscode.ExtensionContext) {
 	registerTerminalLastCommandVariable();
 	registerTerminalSelectionVariable();
 
+	// Register the agent mode
+	const agentTools = new AgentTools();
+	context.subscriptions.push(
+		vscode.commands.registerCommand('flexpilot.agent', () => {
+			return {
+				name: 'Flexpilot',
+				description: 'AI pair programmer powered by large language models',
+				tools: Array.from(agentTools.getTools().values()).map(tool => ({
+					name: tool.name,
+					description: tool.modelDescription,
+					inputSchema: tool.inputSchema
+				}))
+			};
+		})
+	);
+
 	// Register @-symbol completion provider
 	const symbolCompletionProvider = new SymbolCompletionProvider();
 	registerDisposable(
@@ -100,9 +117,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			'@' // Trigger character
 		)
 	);
-
-	// Register Agent Mode capabilities
-	await registerAgentMode();
 
 	// Check the internet connection and activate
 	vscode.commands.executeCommand('flexpilot.checkInternetConnection');

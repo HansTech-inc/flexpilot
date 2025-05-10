@@ -18,28 +18,29 @@ import { AgentTools } from '../providers/agent-tools';
  */
 export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
 	return jsxToMarkdown({
-		content: `
-<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-  <span style="font-size: 2.2em;">🚀</span>
-  <span style="font-weight: 700; font-size: 1.3em; color: #6C63FF;">Welcome, <b>@${username}</b>!</span>
-</div>
-<p style="font-size: 1.1em; color: #444;">
-  I'm <b>Flexpilot</b> — your next-gen AI pair programmer.<br/>
-  Ready to help you <b>code faster, smarter, and with confidence</b>.<br/>
-  <span style="color: #6C63FF;">Ask me anything, or type <code>/</code> for commands.</span>
-</p>
-<ul style="margin-top: 10px; color: #888; font-size: 1em;">
-  <li>✨ <b>Autonomous agent</b> for complex, multi-step tasks</li>
-  <li>🔍 <b>Understands your codebase</b> and context</li>
-  <li>🌐 <b>Web search</b> and <b>tool integration</b> built-in</li>
-  <li>🧠 <b>Proactive suggestions</b> and <b>auto-fixes</b></li>
-</ul>
-<p style="margin-top: 12px; color: #6C63FF; font-weight: 600;">
-  Let's build something amazing together!
-</p>
-`
-		}
-	);
+		children: (
+			<div>
+				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+					<span style="font-size: 2.2em;">🚀</span>
+					<span style="font-weight: 700; font-size: 1.3em; color: #6C63FF;">Welcome, <b>@{username}</b>!</span>
+				</div>
+				<p style="font-size: 1.1em; color: #444;">
+					I'm <b>Flexpilot</b> — your next-gen AI pair programmer.<br/>
+					Ready to help you <b>code faster, smarter, and with confidence</b>.<br/>
+					<span style="color: #6C63FF;">Ask me anything, or type <code>/</code> for commands.</span>
+				</p>
+				<ul style="margin-top: 10px; color: #888; font-size: 1em;">
+					<li>✨ <b>Autonomous agent</b> for complex, multi-step tasks</li>
+					<li>🔍 <b>Understands your codebase</b> and context</li>
+					<li>🌐 <b>Web search</b> and <b>tool integration</b> built-in</li>
+					<li>🧠 <b>Proactive suggestions</b> and <b>auto-fixes</b></li>
+				</ul>
+				<p style="margin-top: 12px; color: #6C63FF; font-weight: 600;">
+					Let's build something amazing together!
+				</p>
+			</div>
+		)
+	});
 };
 
 /**
@@ -68,54 +69,58 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 
 	// Add the system message with the role and context information
 	messages.push(
-		jsxToChatMessage(<Message role="system">
-			<h2>Important Instructions</h2>
-			<ul>
-				<li>
-					You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting a perfect title for a chat conversation</strong>.
-				</li>
-				<li>
-					You must provide a <strong>concise title</strong> that encapsulates the main topic of the chat dialogue in <strong>under 10 words in a single sentence.</strong>
-				</li>
-				<li>
-					<strong>Very Important: Strictly follow below response format in the output</strong>
-				</li>
-			</ul>
-			<h2>Response Format:</h2>
-			<pre>&lt;chat-summary-title&gt;Perfect title for the chat conversation&lt;/chat-summary-title&gt;</pre>
+		jsxToChatMessage(
+			<Message role="system">
+				<h2>Important Instructions</h2>
+				<ul>
+					<li>
+						You are an AI programming assistant and a skilled programmer named <strong>Flexpilot</strong>, who is <strong>working inside VS Code IDE</strong> in <strong>the current</strong> operating system, assisting a fellow developer in <strong>crafting a perfect title for a chat conversation</strong>.
+					</li>
+					<li>
+						You must provide a <strong>concise title</strong> that encapsulates the main topic of the chat dialogue in <strong>under 10 words in a single sentence.</strong>
+					</li>
+					<li>
+						<strong>Very Important: Strictly follow below response format in the output</strong>
+					</li>
+				</ul>
+				<h2>Response Format:</h2>
+				<pre>&lt;chat-summary-title&gt;Perfect title for the chat conversation&lt;/chat-summary-title&gt;</pre>
 
-			<h2>Example Responses</h2>
-			<pre>&lt;chat-summary-title&gt;Optimizing SQL query performance&lt;/chat-summary-title&gt;</pre>
-			<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
-			<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
-			<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>
-		</Message>)
+				<h2>Example Responses</h2>
+				<pre>&lt;chat-summary-title&gt;Optimizing SQL query performance&lt;/chat-summary-title&gt;</pre>
+				<pre>&lt;chat-summary-title&gt;Debugging memory leaks in C++ applications&lt;/chat-summary-title&gt;</pre>
+				<pre>&lt;chat-summary-title&gt;Configuring Kubernetes ingress controllers&lt;/chat-summary-title&gt;</pre>
+				<pre>&lt;chat-summary-title&gt;Implementing JWT authentication in Node.js&lt;/chat-summary-title&gt;</pre>
+			</Message>
+		)
 	);
 
-	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage(<Message role="user">
-			Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format
-		</Message>)
+		jsxToChatMessage(
+			<Message role="user">
+				Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format
+			</Message>
+		)
 	);
 
-	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage(<Message role="user">
-			<h3>Chat Conversation</h3>
-			<ul>
-				{prompt && (
-					<li>
-						<strong>User:</strong> {prompt}
-					</li>
-				)}
-				{response && (
-					<li>
-						<strong>Assistant:</strong> {response}
-					</li>
-				)}
-			</ul>
-		</Message>)
+		jsxToChatMessage(
+			<Message role="user">
+				<h3>Chat Conversation</h3>
+				<ul>
+					{prompt && (
+						<li>
+							<strong>User:</strong> {prompt}
+						</li>
+					)}
+					{response && (
+						<li>
+							<strong>Assistant:</strong> {response}
+						</li>
+					)}
+				</ul>
+			</Message>
+		)
 	);
 
 	// Return the generated messages array for the chat model

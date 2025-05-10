@@ -85,7 +85,7 @@ const convertChatToCoreMessage = (message: vscode.LanguageModelChatMessage): Cor
 		}
 		// Return the `UserMessage` or `ToolMessage` based on the content.
 		if (toolResultParts.length) {
-			return { role: 'user', content: toolResultParts };
+			return { role: 'user', content: textParts.length ? textParts : [{ type: 'text', text: toolResultParts.map(t => t.result).join('\n') }] };
 		} else if (textParts.length) {
 			return { role: 'user', content: textParts };
 		} else {

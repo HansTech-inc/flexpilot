@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { SymbolResolver } from '../util/symbol-resolver';
 import { logger } from '../logger';
 
 /**
@@ -8,13 +7,11 @@ import { logger } from '../logger';
  * including files, folders, and code symbols.
  */
 export class SymbolCompletionProvider implements vscode.CompletionItemProvider {
-	private symbolResolver: SymbolResolver;
 	private fileCache: Map<string, vscode.CompletionItem[]>;
 	private lastCacheUpdate: number;
 	private cacheExpiration = 30000; // 30 seconds
 
 	constructor() {
-		this.symbolResolver = new SymbolResolver();
 		this.fileCache = new Map();
 		this.lastCacheUpdate = 0;
 	}

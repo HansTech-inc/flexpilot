@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import * as path from 'path-browserify';
 import { modelConfigs, globalState, usagePreferences } from '../context';
 import { IModelConfig } from '../types';
 import { ModelProviders, modelProviderManager } from '.';
