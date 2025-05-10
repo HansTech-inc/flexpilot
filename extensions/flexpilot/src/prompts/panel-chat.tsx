@@ -8,7 +8,6 @@ import {
 	jsxToChatMessage,
 	jsxToMarkdown,
 } from './jsx-utilities';
-import { Message } from './jsx-utilities';
 import { resolveVariablesToCoreMessages } from '../variables';
 import { AgentTools } from '../providers/agent-tools';
 
