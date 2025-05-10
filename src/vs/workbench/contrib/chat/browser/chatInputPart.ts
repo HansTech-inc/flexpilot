@@ -13,7 +13,7 @@ import { Button } from '../../../../base/browser/ui/button/button.js';
 import { IManagedHoverTooltipMarkdownString } from '../../../../base/browser/ui/hover/hover.js';
 import { IHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate.js';
 import { getBaseLayerHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate2.js';
-import { createInstantHoverDelegate, getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { createInstantHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
 import { HoverPosition } from '../../../../base/browser/ui/hover/hoverWidget.js';
 import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
 import { ProgressBar } from '../../../../base/browser/ui/progressbar/progressbar.js';
@@ -101,7 +101,6 @@ import { ChatFollowups } from './chatFollowups.js';
 import { IChatViewState } from './chatWidget.js';
 import { ChatImplicitContext } from './contrib/chatImplicitContext.js';
 import { imageToHash } from './chatPasteProviders.js';
-import { getService } from '../../../../platform/instantiation/common/instantiation.js';
 
 const $ = dom.$;
 
@@ -289,6 +288,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		@ITextModelService private readonly textModelResolverService: ITextModelService,
 		@IStorageService private readonly storageService: IStorageService,
 		@ILabelService private readonly labelService: ILabelService,
+		@INotificationService private readonly notificationService: INotificationService,
 	) {
 		super();
 
@@ -1309,12 +1309,14 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 			pillsContainer.innerHTML = '';
 			const filesToShow = collapsed && changedFiles.length > maxVisible ? changedFiles.slice(0, maxVisible) : changedFiles;
 			filesToShow.forEach((entry, idx) => {
-				if (!('reference' in entry) || !entry.reference) return;
+				// Ensure type check is directly above usage
+				if (!('reference' in entry) || !entry.reference || !URI.isUri(entry.reference)) return;
+				const reference = entry.reference as URI;
 				const pill = document.createElement('span');
 				pill.className = 'working-set-pill';
-				pill.textContent = this.labelService.getUriBasenameLabel(entry.reference);
-				pill.title = this.labelService.getUriLabel(entry.reference, { relative: true });
-				pill.onclick = () => this.openResource(entry.reference, false, undefined);
+				pill.textContent = this.labelService.getUriBasenameLabel(reference);
+				pill.title = this.labelService.getUriLabel(reference, { relative: true });
+				pill.onclick = () => this.openResource(reference, false, undefined);
 
 				// Add reject/revert icon
 				const rejectIcon = document.createElement('span');
@@ -1323,7 +1325,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 				rejectIcon.onclick = async (e) => {
 					e.stopPropagation();
 					rejectIcon.classList.add('loading');
-					await this.revertFileWithGit(entry.reference, rejectIcon);
+					await this.revertFileWithGit(reference, rejectIcon);
 					rejectIcon.classList.remove('loading');
 				};
 				pill.appendChild(rejectIcon);
@@ -1348,6 +1350,11 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		pillsWorkingSetContainer.appendChild(pillsContainer);
 		// --- End Working Set Pills ---
 
+		// Add Files Element for suggested files
+		const addFilesElement = innerContainer.querySelector('.chat-editing-session-add-files') as HTMLElement ?? dom.append(innerContainer, $('.chat-editing-session-add-files'));
+		addFilesElement.innerHTML = '';
+		// Define hoverDelegate for this section if not already in scope
+		const addFilesHoverDelegate = this._register(createInstantHoverDelegate());
 		// REALTED files (after Add Files...)
 		for (const [uri, metadata] of chatEditingSession.workingSet) {
 			if (metadata.state !== WorkingSetEntryState.Suggested) {
@@ -1356,7 +1363,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 			const addBtn = this._chatEditsActionsDisposables.add(new Button(addFilesElement, {
 				supportIcons: true,
 				secondary: true,
-				hoverDelegate
+				hoverDelegate: addFilesHoverDelegate
 			}));
 			addBtn.enabled = remainingFileEntriesBudget > 0;
 			addBtn.label = this.labelService.getUriBasenameLabel(uri);
@@ -1371,7 +1378,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 			const rmBtn = this._chatEditsActionsDisposables.add(new Button(addFilesElement, {
 				supportIcons: false,
 				secondary: true,
-				hoverDelegate
+				hoverDelegate: addFilesHoverDelegate
 			}));
 			rmBtn.icon = Codicon.close;
 			rmBtn.setTitle(localize('chatEditingSession.removeSuggested', 'Remove suggestion'));
@@ -1394,12 +1401,6 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 				group.remove();
 			}));
 		}
-
-		// Placeholder for git revert logic
-		this.revertFileWithGit = (uri) => {
-			// TODO: Implement git revert logic for the file at uri
-			console.log('Revert file with git:', uri.toString());
-		};
 	}
 
 	async renderFollowups(items: IChatFollowup[] | undefined, response: IChatResponseViewModel | undefined): Promise<void> {
@@ -1484,20 +1485,15 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		this.historyService.saveHistory(this.location, inputHistory);
 	}
 
-	revertFileWithGit(uri) {
-		// TODO: Implement git revert logic for the file at uri
-		console.log('Revert file with git:', uri.toString());
-	}
 
 	/**
 	 * Revert file changes using git. Shows notification on success or error.
 	 */
-	async revertFileWithGit(uri, iconEl) {
+	async revertFileWithGit(uri: URI, iconEl: HTMLElement): Promise<void> {
 		try {
 			// Try to get the git extension
-			const vscode = (window as any).acquireVsCodeApi ? (window as any).acquireVsCodeApi() : undefined;
 			// If running in VS Code, use the git extension API
-			let gitApi;
+			let gitApi: any;
 			if ((window as any).vscode && (window as any).vscode.extensions) {
 				const gitExtension = (window as any).vscode.extensions.getExtension('vscode.git');
 				if (gitExtension) {
@@ -1509,16 +1505,14 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 				await this.commandService.executeCommand('git.revertSelectedRanges', uri);
 			} else {
 				// Find the repo for this file
-				const repo = gitApi.repositories.find(r => uri.fsPath.startsWith(r.rootUri.fsPath));
+				const repo = gitApi.repositories.find((r: any) => uri.fsPath.startsWith(r.rootUri.fsPath));
 				if (!repo) throw new Error('No git repository found for this file.');
 				await repo.revert([uri]);
 			}
 			// Notify success
-			const notificationService = getService(INotificationService);
-			notificationService?.notify({ severity: Severity.Info, message: `Reverted changes for ${this.labelService.getUriBasenameLabel(uri)}.` });
-		} catch (err) {
-			const notificationService = getService(INotificationService);
-			notificationService?.notify({ severity: Severity.Error, message: `Failed to revert changes: ${err.message}` });
+			this.notificationService?.notify({ severity: Severity.Info, message: `Reverted changes for ${this.labelService.getUriBasenameLabel(uri)}.` });
+		} catch (err: any) {
+			this.notificationService?.notify({ severity: Severity.Error, message: `Failed to revert changes: ${err.message}` });
 		}
 	}
 }
