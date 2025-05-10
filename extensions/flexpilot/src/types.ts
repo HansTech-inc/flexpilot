@@ -22,6 +22,7 @@ export interface ICompletionsConfig {
  * Interface for chat model provider results.
  */
 export interface IChatModelProviderResult {
+	model: any;
 	settings: {
 		temperature: number;
 	};

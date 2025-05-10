@@ -11,7 +11,8 @@ import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import * as url from 'url';
 import { Buffer } from 'node:buffer';
-import type { Cheerio, CheerioAPI,  Element } from 'cheerio';
+import type { Cheerio, CheerioAPI } from 'cheerio';
+import type { AnyNode, Element, Text } from 'domhandler';
 
 
 /**
@@ -841,7 +842,7 @@ export class AgentTools implements vscode.Disposable {
 		$('script, style, noscript, iframe, svg, path, symbol, meta, link').remove();
 
 		// If a query is provided, try to find the most relevant part of the page
-		let targetNodes: Cheerio<Element>;
+		let targetNodes: Cheerio<AnyNode>;
 		if (query) {
 			// Search for the query in text nodes, and select the parent element
 			const elementsContainingQuery = $(`*:contains('${query}')`)
@@ -886,7 +887,7 @@ export class AgentTools implements vscode.Disposable {
 	}
 
 	private _extractTextFromNodes(
-		nodes: Cheerio<Element>,
+		nodes: Cheerio<AnyNode>,
 		baseUrl: string,
 		$: CheerioAPI,
 		options: { length?: number; preserveNewlines?: boolean } = { length: 8000, preserveNewlines: false }
@@ -894,9 +895,9 @@ export class AgentTools implements vscode.Disposable {
 		const { length = 8000, preserveNewlines = false } = options;
 		let text = '';
 
-		nodes.each((_: number, node: Element) => {
+		nodes.each((_: number, node: AnyNode) => {
 			if (node.type === 'text') {
-				text += node.data;
+				text += (node as Text).data;
 			} else if (node.type === 'tag') {
 				if (node.name === 'a') {
 					const href = node.attribs?.href;
@@ -954,7 +955,7 @@ export class AgentTools implements vscode.Disposable {
 		return text.length > length ? text.substring(0, length) + '...' : text;
 	}
 
-	private _makeLinksAbsolute(nodes: Cheerio<Element>, baseUrl: string, $: CheerioAPI): Cheerio<Element> {
+	private _makeLinksAbsolute(nodes: Cheerio<AnyNode>, baseUrl: string, $: CheerioAPI): Cheerio<AnyNode> {
 		nodes.find('a').each((_: number, el: Element) => {
 			const element = el as Element;
 			const href = element.attribs?.href;
