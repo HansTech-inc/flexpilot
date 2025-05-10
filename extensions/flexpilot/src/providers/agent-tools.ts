@@ -10,6 +10,8 @@ import fetch from 'node-fetch';
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import * as url from 'url';
+import { Buffer } from 'node:buffer';
+
 
 /**
  * Tool contribution definition
@@ -473,32 +475,32 @@ export class AgentTools implements vscode.Disposable {
             return "No search results found.";
         }
         // 3. Get top 7 results
-        const topResults = searchData.items.slice(0, 7);
-
-        // 4. Parallel Scraping for Deep Content, Code, and Images
-        let browser;
-        let summaries: { title: string, url: string, snippet: string, content: string, codeBlocks: string[], images: string[] }[] = [];
+        const topResults = searchData.items.slice(0, 7);        // 4. Parallel Scraping for Deep Content, Code, and Images
+        let browser: puppeteer.Browser | undefined;
+        let summaries: { title: string, url: string, snippet: string, content: string, codeBlocks: string[]; images: string[] }[] = [];
         try {
             browser = await puppeteer.launch({ headless: true });
-            const scrapePromises = topResults.map(async (result) => {
+            const scrapePromises = topResults.map(async (result: { title: string, link: string, snippet: string }) => {
                 const { title, link: pageUrl, snippet } = result;
                 let content = '';
-                let codeBlocks: string[] = [];
-                let images: string[] = [];
+                const codeBlocks: string[] = [];
+                const images: string[] = [];
                 try {
-                    const page = await browser.newPage();
+                    const page = await browser!.newPage();
                     await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
                     const html = await page.content();
                     const $ = cheerio.load(html);
                     // Extract just the body text
                     content = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 3000);
                     // Extract code blocks
-                    $('pre, code').each((_, el) => {
+                    $('pre, code').each((_: number, el: cheerio.Element) => {
                         const code = $(el).text();
-                        if (code && code.length > 10 && codeBlocks.length < 5) codeBlocks.push(code.slice(0, 500));
+                        if (code && code.length > 10 && codeBlocks.length < 5) {
+                            codeBlocks.push(code.slice(0, 500));
+                        }
                     });
                     // Extract images
-                    $('img').each((_, el) => {
+                    $('img').each((_: number, el: cheerio.Element) => {
                         const src = $(el).attr('src');
                         if (src && images.length < 3) {
                             let absUrl = src;
@@ -630,18 +632,16 @@ export class AgentTools implements vscode.Disposable {
             return [];
         }
         // 3. Get top 7 results
-        const topResults = searchData.items.slice(0, 7);
-
-        // 4. Parallel Scraping for Deep Content
-        let browser;
+        const topResults = searchData.items.slice(0, 7);        // 4. Parallel Scraping for Deep Content
+        let browser: puppeteer.Browser | undefined;
         let summaries: { title: string, url: string, content: string }[] = [];
         try {
             browser = await puppeteer.launch({ headless: true });
-            const scrapePromises = topResults.map(async (result) => {
+            const scrapePromises = topResults.map(async (result: { title: string, link: string }) => {
                 const { title, link: pageUrl } = result;
                 let content = '';
                 try {
-                    const page = await browser.newPage();
+                    const page = await browser!.newPage();
                     await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
                     const html = await page.content();
                     const $ = cheerio.load(html);
@@ -716,9 +716,8 @@ export class AgentTools implements vscode.Disposable {
      *
      * Note: This only works in Node.js (desktop) extensions, not in web extensions.
      * Throws an error if called in a web extension context.
-     */
-    async runCommand(command: string): Promise<string> {
-        if (typeof process === 'undefined' || process?.browser) {
+     */    async runCommand(command: string): Promise<string> {
+        if (typeof window !== 'undefined') {
             throw new Error('runCommand is not supported in web extension context.');
         }
         // Dynamic import for Node.js core module
@@ -747,9 +746,8 @@ export class AgentTools implements vscode.Disposable {
 
     /**
      * Lists all symbols in a file.
-     */
-    async listSymbolsInFile(uri: vscode.Uri): Promise<vscode.DocumentSymbol[] | undefined> {
-        const document = await vscode.workspace.openTextDocument(uri);
+     */    async listSymbolsInFile(uri: vscode.Uri): Promise<vscode.DocumentSymbol[] | undefined> {
+        await vscode.workspace.openTextDocument(uri);
         return await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri);
     }
 

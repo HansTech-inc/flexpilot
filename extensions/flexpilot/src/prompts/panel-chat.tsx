@@ -16,10 +16,8 @@ import { AgentTools } from '../providers/agent-tools';
  * Generates the welcome message for the user in the chat panel.
  */
 export const getWelcomeMessage = (username: string): vscode.MarkdownString => {
-	return jsxToMarkdown(
-		{
-			role: 'user',
-			content: `
+	return jsxToMarkdown({
+		content: `
 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
   <span style="font-size: 2.2em;">🚀</span>
   <span style="font-weight: 700; font-size: 1.3em; color: #6C63FF;">Welcome, <b>@${username}</b>!</span>
@@ -70,7 +68,6 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			role: 'user',
 			content: `
 <h2>Important Instructions</h2>
 <ul>
@@ -97,14 +94,14 @@ export const buildTitleProviderRequest = (context: vscode.ChatContext): vscode.L
 
 	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage({ role: 'user', content: `
+		jsxToChatMessage({ content: `
 Provide a concise title for the below chat conversation that encapsulates the main topic discussed. It must be under 10 words in a single sentence and strictly follow response format
 ` })
 	);
 
 	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage({ role: 'user', content: `
+		jsxToChatMessage({ content: `
 <h3>Chat Conversation</h3>
 <ul>
 	{prompt && (
@@ -138,7 +135,6 @@ export const buildFollowupProviderRequest = (
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			role: 'user',
 			content: `
 <h2>Important Instructions</h2>
 <ul>
@@ -187,7 +183,7 @@ export const buildFollowupProviderRequest = (
 
 	// Add the user prompt from the context history
 	messages.push(
-		jsxToChatMessage({ role: 'user', content: `
+		jsxToChatMessage({ content: `
 Write a short (under 10 words) one-sentence follow up question that the user can ask naturally that follows from the previous few questions and answers.
 ` })
 	);
@@ -208,7 +204,6 @@ export const buildRequest = async (
 	// Add the system message with the role and context information
 	messages.push(
 		jsxToChatMessage({
-			role: 'user',
 			content: `
 <h1>Important Points</h1>
 <ul>
@@ -264,7 +259,7 @@ export const buildRequest = async (
 			// Add the summary and citations as a system message
 			const citations = webResults.map((r, i) => `[${i+1}] ${r.title} (${r.url})`).join('\n');
 			messages.push(
-				jsxToChatMessage({ role: 'user', content: `
+				jsxToChatMessage({ content: `
 <h3>Web Search Context</h3>
 <p>${summary}</p>
 <p><strong>Citations:</strong><br/>${citations}</p>
@@ -272,7 +267,7 @@ export const buildRequest = async (
 			);
 		} catch (err) {
 			messages.push(
-				jsxToChatMessage({ role: 'user', content: `
+				jsxToChatMessage({ content: `
 Web search failed: ${String(err)}
 ` })
 			);
@@ -326,7 +321,6 @@ export const panelChatPrompts = {
 	getHelpTextPrefix(): vscode.MarkdownString {
 		return jsxToMarkdown(
 			{
-				role: 'user',
 				content: `
 📚 Explore the Flexpilot IDE official documentation <a href='https://flexpilot.ai'>here</a> for all the details.
 `

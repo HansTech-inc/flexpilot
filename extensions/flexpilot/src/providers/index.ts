@@ -11,7 +11,7 @@ import { GenericChatModelProvider } from './generic';
 import { modelConfigs } from '../context';
 import { GroqCloudChatModelProvider } from './groq';
 import { MistralAIChatModelProvider } from './mistral-ai';
-import { OpenAIChatModelProvider } from './openai';
+import { OpenAIChatModelProvider } from './openai';i
 import { GoogleChatModelProvider } from './google';
 import { AzureOpenAIChatModelProvider } from './azure';
 import { AnthropicChatModelProvider } from './anthropic';
@@ -207,8 +207,7 @@ export const modelProviderManager = {
 						messages: convertedMessages,
 						abortSignal: abortController.signal,
 						experimental_toolCallStreaming: false,
-						// System prompts/constants available here if needed
-						prompts,
+						prompt: prompts
 					});
 
 					// Listen for response parts and update the progress

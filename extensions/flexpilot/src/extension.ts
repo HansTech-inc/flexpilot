@@ -23,6 +23,7 @@ import { SessionHistoryView } from './views/session-history-view';
 import { SessionHistoryManager } from './util/session-history-manager';
 import { ModelManagementProvider } from './providers/model-management-provider';
 import { registerImportVSCodeSettingsAutoCommand } from './commands/import-vscode-settings';
+import SessionManager from './interfaces/session-manager';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -31,8 +32,8 @@ import * as path from 'path';
  * Activates the extension.
  */
 export async function activate(context: vscode.ExtensionContext) {
-	// Instantiate the SessionHistoryManager
-	const sessionHistoryManager = new SessionHistoryManager(context);
+	// Initialize the SessionManager
+	SessionManager.initialize(context);
 
 	await setContext('isLoaded', false);
 	await setContext('isNetworkConnected', true);
@@ -127,15 +128,21 @@ export async function activate(context: vscode.ExtensionContext) {
 	logger.info('Flexpilot extension initial activation complete');
 
 	// Register the Session History View
-	const sessionHistoryViewProvider = new SessionHistoryView(context.extensionUri, sessionHistoryManager);
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(SessionHistoryView.viewId, sessionHistoryViewProvider)
-	);
+	const historyManager = SessionManager.instance.historyManager;
+
+	if (historyManager) {
+		const sessionHistoryViewProvider = new SessionHistoryView(context.extensionUri, historyManager);
+		context.subscriptions.push(
+			vscode.window.registerWebviewViewProvider(SessionHistoryView.viewId, sessionHistoryViewProvider)
+		);
+	} else {
+		logger.error('Failed to register SessionHistoryView: history manager is not initialized');
+	}
 
 	// Register the command to open the Session History View
 	context.subscriptions.push(
 		vscode.commands.registerCommand('flexpilot.openSessionHistory', () => {
-			vscode.commands.executeCommand('workbench.view.extension.flexpilot-sessionHistoryView');
+			vscode.commands.executeCommand('workbench.view.extension.flexpilot-session-history');
 		})
 	);
 
@@ -171,6 +178,86 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.workspace.fs.readFile(settingsHtmlPath).then(buffer => {
 				panel.webview.html = buffer.toString();
 			});
+		})
+	);
+
+	// Register session history commands
+	context.subscriptions.push(
+		vscode.commands.registerCommand('flexpilot.clearSessionHistory', async () => {
+			const historyManager = SessionManager.instance.historyManager;
+			if (historyManager) {
+				const result = await vscode.window.showWarningMessage(
+					'Are you sure you want to clear all session history? This cannot be undone.',
+					{ modal: true },
+					'Clear All', 'Cancel'
+				);
+
+				if (result === 'Clear All') {
+					historyManager.clearHistory();
+					vscode.window.showInformationMessage('Session history cleared successfully');
+				}
+			} else {
+				vscode.window.showErrorMessage('Failed to clear history: Session manager not initialized');
+			}
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('flexpilot.exportSessionHistory', async () => {
+			const historyManager = SessionManager.instance.historyManager;
+			if (historyManager) {
+				try {
+					const sessions = historyManager.getSessions();
+					const jsonData = JSON.stringify(sessions, null, 2);
+
+					// Show save dialog to get file path
+					const savePath = await vscode.window.showSaveDialog({
+						filters: { 'JSON Files': ['json'] },
+						defaultUri: vscode.Uri.file('flexpilot-session-history.json')
+					});
+
+					if (savePath) {
+						await vscode.workspace.fs.writeFile(savePath, Buffer.from(jsonData, 'utf8'));
+						vscode.window.showInformationMessage(`Session history exported to ${savePath.fsPath}`);
+					}
+				} catch (error) {
+					logger.error('Failed to export session history:', error);
+					vscode.window.showErrorMessage(`Failed to export session history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+				}
+			} else {
+				vscode.window.showErrorMessage('Failed to export history: Session manager not initialized');
+			}
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('flexpilot.filterSessionHistory', async () => {
+			// Display a quick pick to select filter type
+			const filterType = await vscode.window.showQuickPick(
+				[
+					{ label: 'All Sessions', description: 'Show all sessions', value: undefined },
+					{ label: 'Chat Sessions', description: 'Show only chat sessions', value: 'chat' },
+					{ label: 'Editing Sessions', description: 'Show only editing sessions', value: 'editing' },
+					{ label: 'File Modifications', description: 'Show only sessions that modified files', value: 'fileModification' }
+				],
+				{
+					placeHolder: 'Select session filter'
+				}
+			);
+
+			if (filterType) {
+				// We need to tell the webview to apply this filter
+				// This will be handled by the webview provider
+				vscode.commands.executeCommand('workbench.view.extension.flexpilot-session-history');
+				// The filter selection is passed to the webview via a command
+				setTimeout(() => {
+					const params = filterType.value ? {
+						type: filterType.value === 'fileModification' ? undefined : filterType.value,
+						isFileModification: filterType.value === 'fileModification'
+					} : {};
+					vscode.commands.executeCommand('flexpilot.sessionHistoryView.applyFilter', params);
+				}, 500);
+			}
 		})
 	);
 

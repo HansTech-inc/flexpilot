@@ -8,7 +8,7 @@ import { logger } from '../logger';
 import { panelChatPrompts, getWelcomeMessage, buildTitleProviderRequest, buildFollowupProviderRequest, buildRequest } from '../prompts/panel-chat';
 import { usagePreferences } from '../context';
 import { getGitHubSession, parseTokenUsage } from '../utilities';
-import { SessionHistoryManager } from '../util/session-history-manager';
+import SessionManager from './session-manager';
 
 /**
  * Provides welcome messages and sample questions for the Flexpilot chat panel.
@@ -146,6 +146,20 @@ const chatRequestHandler: vscode.ChatExtendedRequestHandler = async (request, co
 
 		// Return the metadata for the response
 		logger.debug('Response text for panel chat: \n\n' + responseText);
+
+		// Save the session to history
+		try {
+			SessionManager.saveSession(
+				'chat',
+				request.prompt,
+				responseText,
+				false,
+				[]
+			);
+		} catch (err) {
+			logger.error('Failed to save session to history:', err);
+		}
+
 		return { metadata: { response: responseText, request: request.prompt } };
 	} catch (error) {
 		// Log and return error details if any

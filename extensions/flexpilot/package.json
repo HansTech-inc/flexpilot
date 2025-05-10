@@ -240,6 +240,21 @@
           "command": "flexpilot.openSettings",
           "when": "view == flexpilot.chatView || view == flexpilot.editSessionView",
           "group": "navigation@2"
+        },
+        {
+          "command": "flexpilot.clearSessionHistory",
+          "when": "view == flexpilot.sessionHistoryView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "flexpilot.exportSessionHistory",
+          "when": "view == flexpilot.sessionHistoryView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "flexpilot.filterSessionHistory",
+          "when": "view == flexpilot.sessionHistoryView",
+          "group": "navigation@3"
         }
       ]
     },
@@ -426,6 +441,26 @@
         "icon": "$(history)"
       },
       {
+        "command": "flexpilot.clearSessionHistory",
+        "title": "Clear All Session History",
+        "category": "Flexpilot"
+      },
+      {
+        "command": "flexpilot.exportSessionHistory",
+        "title": "Export Session History",
+        "category": "Flexpilot"
+      },
+      {
+        "command": "flexpilot.filterSessionHistory",
+        "title": "Filter Session History",
+        "category": "Flexpilot"
+      },
+      {
+        "command": "flexpilot.sessionHistoryView.applyFilter",
+        "title": "Apply Session History Filter",
+        "enablement": "false"
+      },
+      {
         "command": "flexpilot.openModelManagement",
         "title": "Open Model Management",
         "category": "Flexpilot"
@@ -442,6 +477,11 @@
           "id": "flexpilot-model-management",
           "title": "Model Management",
           "icon": "$(settings-gear)"
+        },
+        {
+          "id": "flexpilot-session-history",
+          "title": "Session History",
+          "icon": "$(history)"
         }
       ]
     },
@@ -451,6 +491,13 @@
           "type": "webview",
           "id": "flexpilot.modelManagement",
           "name": "Model Management"
+        }
+      ],
+      "flexpilot-session-history": [
+        {
+          "type": "webview",
+          "id": "flexpilot.sessionHistoryView",
+          "name": "Session History"
         }
       ]
     },
